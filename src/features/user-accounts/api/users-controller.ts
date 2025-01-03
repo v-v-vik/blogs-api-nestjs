@@ -1,5 +1,16 @@
-import { Controller, Get, Post, Query, Param, Body, Delete, HttpStatus, HttpCode } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Param,
+  Body,
+  Delete,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common';
 import { UsersService } from '../application/users-service';
+import { CreateUserModel } from '../domain/dto/user.create-dto';
 
 @Controller('users')
 export class UsersController {
@@ -16,7 +27,7 @@ export class UsersController {
     return this.UsersQueryRepository.getAll(query);
   }
   @Post()
-  async create(@Body() body: InputUserModel): Promise<UserViewModel> {
+  async create(@Body() body: CreateUserModel): Promise<UserViewModel> {
     const userId = await this.usersService.create(body);
     return this.UsersQueryRepository.getByIdOrNotFoundFail(userId);
   }
