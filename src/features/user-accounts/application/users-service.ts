@@ -6,6 +6,7 @@ import {
   CreateUserModel,
   UpdateUserModel,
 } from '../domain/dto/user.create-dto';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,7 @@ export class UsersService {
     private usersRepository: UsersRepository,
   ) {}
 
-  async createUser(dto: CreateUserModel): Promise<string> {
+  async create(dto: CreateUserModel): Promise<string> {
     //TODO: move bcrypt to a separate class
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = this.UserModel.createInstance({
@@ -27,7 +28,7 @@ export class UsersService {
     return user._id.toString();
   }
 
-  async updateUser(id: string, dto: UpdateUserModel): Promise<string> {
+  async update(id: string, dto: UpdateUserModel): Promise<string> {
     const user = await this.usersRepository.findOneOrNotFoundFail(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -37,7 +38,7 @@ export class UsersService {
     return user._id.toString();
   }
 
-  async deleteUser(id: string) {
+  async delete(id: string) {
     const user = await this.usersRepository.findOneOrNotFoundFail(id);
     if (!user) {
       throw new NotFoundException('User not found');
