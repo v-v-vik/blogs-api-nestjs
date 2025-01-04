@@ -17,6 +17,6 @@ export enum SortDirection {
 }
 
 export abstract class BaseSortablePaginationParams<T> extends PaginationParams {
-  sortDirection: SortDirection.Desc;
+  sortDirection: SortDirection;
   abstract sortBy: T;
 }

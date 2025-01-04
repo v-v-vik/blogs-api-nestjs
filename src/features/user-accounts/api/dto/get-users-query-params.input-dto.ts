@@ -1,4 +1,7 @@
-import { BaseSortablePaginationParams } from '../../../../core/dto/base.query-params.input-dto';
+import {
+  BaseSortablePaginationParams,
+  SortDirection,
+} from '../../../../core/dto/base.query-params.input-dto';
 
 export enum UsersSortBy {
   CreatedAt = 'createdAt',
@@ -7,7 +10,8 @@ export enum UsersSortBy {
 }
 
 export class GetUsersQueryParams extends BaseSortablePaginationParams<UsersSortBy> {
-  sortBy = UsersSortBy.CreatedAt;
+  sortBy: UsersSortBy = UsersSortBy.CreatedAt;
   searchLoginTerm: string | null = null;
   searchEmailTerm: string | null = null;
+  sortDirection: SortDirection = SortDirection.Desc;
 }

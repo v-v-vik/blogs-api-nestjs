@@ -21,7 +21,7 @@ export class User {
   @Prop({ type: Date })
   createdAt: Date;
 
-  @Prop({ type: DeletionStatus, default: DeletionStatus.NotDeleted })
+  @Prop({ type: String, default: DeletionStatus.NotDeleted })
   deletionStatus: DeletionStatus;
 
   static createInstance(dto: CreateUserModel): UserDocument {
