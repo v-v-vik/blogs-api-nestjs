@@ -6,7 +6,7 @@ import {
   CreateUserModel,
   UpdateUserModel,
 } from '../domain/dto/user.create-dto';
-import bcrypt from 'bcrypt';
+import { BcryptService } from '../adapters/bcrypt-service';
 
 @Injectable()
 export class UsersService {
@@ -14,11 +14,11 @@ export class UsersService {
     @InjectModel(User.name)
     private UserModel: UserModelType,
     private usersRepository: UsersRepository,
+    private bcryptService: BcryptService,
   ) {}
 
   async create(dto: CreateUserModel): Promise<string> {
-    //TODO: move bcrypt to a separate class
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await this.bcryptService.passwordHash(dto.password);
     const user = this.UserModel.createInstance({
       email: dto.email,
       login: dto.login,

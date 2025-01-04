@@ -27,7 +27,7 @@ export class UsersQueryRepository {
     }
     return new UserViewModel(user);
   }
-  //TODO add pagination & filter
+
   async getAll(
     query: GetUsersQueryParams,
   ): Promise<PaginatedViewDto<UserViewModel[]>> {

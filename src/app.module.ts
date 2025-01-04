@@ -5,6 +5,7 @@ import { UsersController } from './features/user-accounts/api/users-controller';
 import { UsersService } from './features/user-accounts/application/users-service';
 import { UserAccountsModule } from './features/user-accounts/user-accounts.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BcryptService } from './features/user-accounts/adapters/bcrypt-service';
 
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import { MongooseModule } from '@nestjs/mongoose';
     UserAccountsModule,
   ],
   controllers: [AppController, UsersController],
-  providers: [AppService, UsersService],
+  providers: [AppService, UsersService, BcryptService],
 })
 export class AppModule {}
