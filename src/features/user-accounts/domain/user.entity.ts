@@ -18,8 +18,8 @@ export class User {
   @Prop({ type: String, required: true })
   email: string;
 
-  @Prop({ type: Date })
-  createdAt: Date;
+  @Prop({ type: String })
+  createdAt: string;
 
   @Prop({ type: String, default: DeletionStatus.NotDeleted })
   deletionStatus: DeletionStatus;

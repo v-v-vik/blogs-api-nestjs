@@ -5,7 +5,9 @@ import {
   UserModelType,
 } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class UsersRepository {
   constructor(@InjectModel(User.name) private UserModel: UserModelType) {}
 

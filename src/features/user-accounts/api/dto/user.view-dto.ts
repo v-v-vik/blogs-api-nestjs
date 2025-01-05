@@ -4,7 +4,7 @@ export class UserViewModel {
   id: string;
   login: string;
   email: string;
-  createdAt: Date;
+  createdAt: string;
 
   constructor(user: UserDocument) {
     this.id = user._id.toString();
