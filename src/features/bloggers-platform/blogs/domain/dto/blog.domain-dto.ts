@@ -1,10 +1,10 @@
-export class CreateBlogModel {
+export class CreateBlogDomainDto {
   name: string;
   description: string;
   websiteUrl: string;
 }
 
-export class UpdateBlogModel {
+export class UpdateBlogDomainDto {
   name: string;
   description: string;
   websiteUrl: string;

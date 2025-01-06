@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { DeletionStatus } from '../../../user-accounts/domain/user.entity';
 import { HydratedDocument, Model } from 'mongoose';
-import { CreateBlogModel, UpdateBlogModel } from './dto/blog.models';
+import {
+  CreateBlogDomainDto,
+  UpdateBlogDomainDto,
+} from './dto/blog.domain-dto';
 
 @Schema({ timestamps: true })
 export class Blog {
@@ -23,7 +26,7 @@ export class Blog {
   @Prop({ type: String, default: DeletionStatus.NotDeleted })
   deletionStatus: DeletionStatus;
 
-  static createInstance(dto: CreateBlogModel): BlogDocument {
+  static createInstance(dto: CreateBlogDomainDto): BlogDocument {
     const blog = new this();
     blog.name = dto.name;
     blog.description = dto.description;
@@ -39,7 +42,7 @@ export class Blog {
     this.deletionStatus = DeletionStatus.PermanentDeleted;
   }
 
-  update(dto: UpdateBlogModel) {
+  update(dto: UpdateBlogDomainDto) {
     this.name = dto.name;
     this.description = dto.description;
     this.websiteUrl = dto.websiteUrl;

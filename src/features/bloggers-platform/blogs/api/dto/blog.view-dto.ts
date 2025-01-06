@@ -1,6 +1,6 @@
 import { BlogDocument } from '../../domain/blog.entity';
 
-export class BlogViewModel {
+export class BlogViewDto {
   id: string;
   name: string;
   description: string;

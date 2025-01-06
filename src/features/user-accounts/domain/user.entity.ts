@@ -1,11 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
-import { CreateUserModel, UpdateUserModel } from './dto/user.create-dto';
-
-export enum DeletionStatus {
-  NotDeleted = 'not-deleted',
-  PermanentDeleted = 'permanent-deleted',
-}
+import { CreateUserDomainDto } from './dto/user.domain-dto';
+import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
 
 @Schema({ timestamps: true })
 export class User {
@@ -24,10 +20,10 @@ export class User {
   @Prop({ type: String, default: DeletionStatus.NotDeleted })
   deletionStatus: DeletionStatus;
 
-  static createInstance(dto: CreateUserModel): UserDocument {
+  static createInstance(dto: CreateUserDomainDto): UserDocument {
     const user = new this();
     user.email = dto.email;
-    user.passwordHash = dto.password;
+    user.passwordHash = dto.passwordHash;
     user.login = dto.login;
 
     return user as UserDocument;
@@ -40,9 +36,9 @@ export class User {
     this.deletionStatus = DeletionStatus.PermanentDeleted;
   }
 
-  update(dto: UpdateUserModel) {
-    this.email = dto.email;
-  }
+  // update(dto: UpdateUserDto) {
+  //   this.email = dto.email;
+  // }
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

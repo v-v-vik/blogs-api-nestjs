@@ -10,11 +10,11 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { UsersService } from '../application/users-service';
-import { CreateUserModel } from '../domain/dto/user.create-dto';
+import { CreateUserDto } from '../dto/user.create-dto';
 import { GetUsersQueryParams } from './dto/get-users-query-params.input-dto';
 import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
-import { UserViewModel } from './dto/user.view-dto';
 import { UsersQueryRepository } from '../infrastructure/user.query-repository';
+import { UserViewDto } from './dto/user.view-dto';
 
 @Controller('users')
 export class UsersController {
@@ -23,17 +23,17 @@ export class UsersController {
     private usersService: UsersService,
   ) {}
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<UserViewModel> {
+  async getById(@Param('id') id: string): Promise<UserViewDto> {
     return this.usersQueryRepository.getByIdOrNotFoundFail(id);
   }
   @Get()
   async getAll(
     @Query() query: GetUsersQueryParams,
-  ): Promise<PaginatedViewDto<UserViewModel[]>> {
+  ): Promise<PaginatedViewDto<UserViewDto[]>> {
     return this.usersQueryRepository.getAll(query);
   }
   @Post()
-  async create(@Body() body: CreateUserModel): Promise<UserViewModel> {
+  async create(@Body() body: CreateUserDto): Promise<UserViewDto> {
     const userId = await this.usersService.create(body);
     return this.usersQueryRepository.getByIdOrNotFoundFail(userId);
   }

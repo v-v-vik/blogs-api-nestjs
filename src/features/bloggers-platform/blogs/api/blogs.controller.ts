@@ -12,10 +12,10 @@ import {
 } from '@nestjs/common';
 import { BlogsService } from '../application/blogs.service';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
-import { CreateBlogModel, UpdateBlogModel } from '../domain/dto/blog.models';
 import { BlogsQueryRepository } from '../infrastructure/blog.query-repository';
-import { BlogViewModel } from './dto/blog.view-dto';
+import { BlogViewDto } from './dto/blog.view-dto';
 import { GetBlogsQueryParams } from './dto/get-blogs-query-params.input-dto';
+import { CreateBlogInputDto, UpdateBlogInputDto } from './dto/blog.input-dto';
 
 @Controller('blogs')
 export class BlogsController {
@@ -27,17 +27,17 @@ export class BlogsController {
   @Get()
   async findAll(
     @Query() query: GetBlogsQueryParams,
-  ): Promise<PaginatedViewDto<BlogViewModel[]>> {
+  ): Promise<PaginatedViewDto<BlogViewDto[]>> {
     return this.blogsQueryRepository.findAll(query);
   }
 
   @Get('id')
-  async findById(@Param('id') id: string): Promise<BlogViewModel> {
+  async findById(@Param('id') id: string): Promise<BlogViewDto> {
     return this.blogsQueryRepository.findById(id);
   }
 
   @Post()
-  async create(@Body() body: CreateBlogModel): Promise<BlogViewModel> {
+  async create(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.create(body);
     return this.blogsQueryRepository.findById(blogId);
   }
@@ -48,13 +48,14 @@ export class BlogsController {
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async update(@Body() body: UpdateBlogModel, @Param('id') id: string) {
-    return await this.blogsService.update(id, body);
+  async update(@Body() body: UpdateBlogInputDto, @Param('id') id: string) {
+    console.log(body, id);
+    return this.blogsService.update(id, body);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string) {
-    return await this.blogsService.delete(id);
+    return this.blogsService.delete(id);
   }
 }

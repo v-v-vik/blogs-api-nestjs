@@ -1,6 +1,6 @@
-import { CreateUserModel } from '../../domain/dto/user.create-dto';
+import { CreateUserDto } from '../../dto/user.create-dto';
 
-export class CreateUserInputModel implements CreateUserModel {
+export class CreateUserInputDto implements CreateUserDto {
   login: string;
   password: string;
   email: string;

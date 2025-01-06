@@ -1,6 +1,6 @@
 import { UserDocument } from '../../domain/user.entity';
 
-export class UserViewModel {
+export class UserViewDto {
   id: string;
   login: string;
   email: string;
