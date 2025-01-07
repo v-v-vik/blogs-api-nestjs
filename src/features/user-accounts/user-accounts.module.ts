@@ -18,5 +18,6 @@ import { BcryptService } from './adapters/bcrypt-service';
     UsersQueryRepository,
     BcryptService,
   ],
+  exports: [MongooseModule],
 })
 export class UserAccountsModule {}

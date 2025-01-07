@@ -1,17 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Blog, BlogDocument, BlogModelType } from '../domain/blog.entity';
-import { DeletionStatus } from '../../../user-accounts/domain/user.entity';
 import { BlogViewDto } from '../api/dto/blog.view-dto';
 import { GetBlogsQueryParams } from '../api/dto/get-blogs-query-params.input-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { FilterQuery } from 'mongoose';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
 @Injectable()
 export class BlogsQueryRepository {
   constructor(@InjectModel(Blog.name) private BlogModel: BlogModelType) {}
 
   async findById(id: string): Promise<BlogViewDto> {
+    console.log(id);
     const blog = await this.BlogModel.findOne({
       _id: id,
       deletionStatus: DeletionStatus.NotDeleted,

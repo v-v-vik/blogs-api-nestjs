@@ -8,11 +8,15 @@ import { BlogsQueryRepository } from './blogs/infrastructure/blog.query-reposito
 import { PostsController } from './posts/api/posts.controller';
 import { PostsService } from './posts/application/posts.service';
 import { Post, PostSchema } from './posts/domain/post.entity';
+import { PostRepository } from './posts/infrastructure/post.repository';
+import { PostsQueryRepository } from './posts/infrastructure/post.query-repository';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Blog.name, schema: BlogSchema }]),
-    MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
+    MongooseModule.forFeature([
+      { name: Blog.name, schema: BlogSchema },
+      { name: Post.name, schema: PostSchema },
+    ]),
   ],
   controllers: [BlogsController, PostsController],
   providers: [
@@ -20,6 +24,9 @@ import { Post, PostSchema } from './posts/domain/post.entity';
     BlogsRepository,
     BlogsQueryRepository,
     PostsService,
+    PostRepository,
+    PostsQueryRepository,
   ],
+  exports: [MongooseModule],
 })
 export class BloggersPlatformModule {}

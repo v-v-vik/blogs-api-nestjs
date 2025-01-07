@@ -14,5 +14,6 @@ export class BlogViewDto {
     this.description = blog.description;
     this.websiteUrl = blog.websiteUrl;
     this.createdAt = blog.createdAt;
+    this.isMembership = blog.isMembership;
   }
 }

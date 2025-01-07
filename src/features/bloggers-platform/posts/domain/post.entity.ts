@@ -1,30 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { LikesInfo, LikesInfoSchema } from './likes-info.schema';
-import { DeletionStatus } from '../../../user-accounts/domain/user.entity';
-import { UpdateBlogDomainDto } from '../../blogs/domain/dto/blog.domain-dto';
+import {
+  LikesInfo,
+  LikesInfoSchema,
+} from '../../likes/domain/likes-info.schema';
 import { HydratedDocument, Model } from 'mongoose';
-import { Blog } from '../../blogs/domain/blog.entity';
+import {
+  CreatePostDomainDto,
+  UpdatePostDomainDto,
+} from './dto/post.domain-dto';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
 @Schema({ timestamps: true })
 export class Post {
-  //   export type PostDBType = {
-  //   _id: ObjectId,
-  //   title: string,
-  //   shortDescription: string,
-  //   content: string,
-  //   blogId: string,
-  //   blogName: string,
-  //   createdAt: string,
-  //   extendedLikesInfo: PostLikesInfo
-  // }
-  //
-  //   export type PostInputModel = {
-  //   title: string,
-  //   shortDescription: string,
-  //   content: string,
-  //   blogId: string
-  // }
-
   @Prop({ type: String, require: true })
   title: string;
 
@@ -49,13 +36,18 @@ export class Post {
   @Prop({ type: String, default: DeletionStatus.NotDeleted })
   deletionStatus: DeletionStatus;
 
-  static createInstance(dto: CreatePostDomainDto) {
+  static createInstance(dto: CreatePostDomainDto): PostDocument {
     const post = new this();
     post.title = dto.title;
-    post.shortDescription = dto.description;
+    post.shortDescription = dto.shortDescription;
     post.content = dto.content;
     post.blogId = dto.blogId;
     post.blogName = dto.blogName;
+    post.createdAt = new Date().toISOString();
+    post.extendedLikesInfo = {
+      likesCount: 0,
+      dislikesCount: 0,
+    };
 
     return post as PostDocument;
   }
@@ -72,6 +64,7 @@ export class Post {
     this.shortDescription = dto.shortDescription;
     this.content = dto.content;
     this.blogId = dto.blogId;
+    this.blogName = dto.blogName;
   }
 }
 

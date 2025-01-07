@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { DeletionStatus } from '../../../user-accounts/domain/user.entity';
 import { HydratedDocument, Model } from 'mongoose';
 import {
   CreateBlogDomainDto,
   UpdateBlogDomainDto,
 } from './dto/blog.domain-dto';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
 @Schema({ timestamps: true })
 export class Blog {
@@ -31,6 +31,7 @@ export class Blog {
     blog.name = dto.name;
     blog.description = dto.description;
     blog.websiteUrl = dto.websiteUrl;
+    blog.createdAt = new Date().toISOString();
 
     return blog as BlogDocument;
   }

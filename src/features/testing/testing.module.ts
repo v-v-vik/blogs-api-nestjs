@@ -1,17 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TestingController } from './testing.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from '../user-accounts/domain/user.entity';
-import {
-  Blog,
-  BlogSchema,
-} from '../bloggers-platform/blogs/domain/blog.entity';
+import { BloggersPlatformModule } from '../bloggers-platform/bloggers-platform.module';
+import { UserAccountsModule } from '../user-accounts/user-accounts.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    MongooseModule.forFeature([{ name: Blog.name, schema: BlogSchema }]),
-  ],
+  imports: [BloggersPlatformModule, UserAccountsModule],
   controllers: [TestingController],
 })
 export class TestingModule {}

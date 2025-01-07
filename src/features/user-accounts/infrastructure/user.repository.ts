@@ -1,11 +1,7 @@
-import {
-  DeletionStatus,
-  User,
-  UserDocument,
-  UserModelType,
-} from '../domain/user.entity';
+import { User, UserDocument, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
+import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
 
 @Injectable()
 export class UsersRepository {

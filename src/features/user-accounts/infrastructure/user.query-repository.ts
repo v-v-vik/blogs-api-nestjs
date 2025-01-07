@@ -1,15 +1,11 @@
-import {
-  DeletionStatus,
-  User,
-  UserDocument,
-  UserModelType,
-} from '../domain/user.entity';
+import { User, UserDocument, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotFoundException } from '@nestjs/common';
 import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
 import { FilterQuery } from 'mongoose';
 import { GetUsersQueryParams } from '../api/dto/get-users-query-params.input-dto';
 import { UserViewDto } from '../api/dto/user.view-dto';
+import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
 
 export class UsersQueryRepository {
   constructor(
