@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -17,17 +18,18 @@ import { BlogViewDto } from './dto/blog.view-dto';
 import { GetBlogsQueryParams } from './dto/get-blogs-query-params.input-dto';
 import { CreateBlogInputDto, UpdateBlogInputDto } from './dto/blog.input-dto';
 import { PostViewDto } from '../../posts/api/dto/post.view-dto';
-import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repository';
 import { GetPostsQueryParams } from '../../posts/api/dto/get-posts-query-params.input-dto';
-import { CreatePostInputDto } from '../../posts/api/dto/post.input-dto';
 import { PostsService } from '../../posts/application/posts.service';
+import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repository';
+import { CreatePostDto } from '../../posts/dto/post.main-dto';
+import { CreatePostInputViaBlogDto } from './dto/post-via-blog.input-dto';
 
 @Controller('blogs')
 export class BlogsController {
   constructor(
     private blogsQueryRepository: BlogsQueryRepository,
-    private blogsService: BlogsService,
     private postsQueryRepository: PostsQueryRepository,
+    private blogsService: BlogsService,
     private postsService: PostsService,
   ) {}
 
@@ -39,14 +41,22 @@ export class BlogsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<BlogViewDto> {
-    return this.blogsQueryRepository.findById(id);
+  async findById(@Param('id') id: string): Promise<BlogViewDto | null> {
+    const blog = await this.blogsQueryRepository.findById(id);
+    if (!blog) {
+      throw new NotFoundException('Blog not found.');
+    }
+    return blog;
   }
 
   @Post()
   async create(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.create(body);
-    return this.blogsQueryRepository.findById(blogId);
+    const blog = await this.blogsQueryRepository.findById(blogId);
+    if (!blog) {
+      throw new NotFoundException('Blog not found.');
+    }
+    return blog;
   }
 
   @Get(':id/posts')
@@ -54,16 +64,26 @@ export class BlogsController {
     @Param('id') id: string,
     @Query() query: GetPostsQueryParams,
   ): Promise<PaginatedViewDto<PostViewDto[]>> {
-    //through service ---- return this.postsQueryRepository.findAll(query, id);
+    return this.postsService.findAllByBlogId(query, id);
   }
 
   @Post(':id/posts')
   async createPostById(
     @Param('id') id: string,
-    @Body() body: CreatePostInputDto,
+    @Body() body: CreatePostInputViaBlogDto,
   ): Promise<PostViewDto> {
-    const postId = await this.postsService.create(body, id);
-    // through service --- return this.postsQueryRepository.findById(postId);
+    const mainDto: CreatePostDto = {
+      title: body.title,
+      shortDescription: body.shortDescription,
+      content: body.content,
+      blogId: id,
+    };
+    const postId = await this.postsService.create(mainDto);
+    const post = await this.postsQueryRepository.findById(postId);
+    if (!post) {
+      throw new NotFoundException('Post not found.');
+    }
+    return post;
   }
 
   @Put(':id')

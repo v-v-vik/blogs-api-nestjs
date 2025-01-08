@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -33,7 +34,11 @@ export class PostsController {
 
   @Get(':id')
   async findById(@Param('id') id: string): Promise<PostViewDto> {
-    return this.postsQueryRepository.findById(id);
+    const post = await this.postsQueryRepository.findById(id);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    return post;
   }
 
   // @Get(':id/comments')
@@ -45,7 +50,11 @@ export class PostsController {
   @Post()
   async create(@Body() body: CreatePostInputDto): Promise<PostViewDto> {
     const postId = await this.postsService.create(body);
-    return this.postsQueryRepository.findById(postId);
+    const post = await this.postsQueryRepository.findById(postId);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+    return post;
   }
 
   @Put(':id')

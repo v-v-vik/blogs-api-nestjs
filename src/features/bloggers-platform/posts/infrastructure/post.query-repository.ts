@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument, PostModelType } from '../domain/post.entity';
 import { NewestLikesViewDto, PostViewDto } from '../api/dto/post.view-dto';
@@ -12,7 +12,7 @@ import { FilterQuery } from 'mongoose';
 export class PostsQueryRepository {
   constructor(@InjectModel(Post.name) private PostModel: PostModelType) {}
 
-  async findById(id: string): Promise<PostViewDto> {
+  async findById(id: string): Promise<PostViewDto | null> {
     const userReaction: LikeStatus = LikeStatus.None;
     const latestLikes: NewestLikesViewDto[] = [];
     const post = await this.PostModel.findOne({
@@ -20,7 +20,7 @@ export class PostsQueryRepository {
       deletionStatus: DeletionStatus.NotDeleted,
     });
     if (!post) {
-      throw new NotFoundException('Post not found');
+      return null;
     }
     return new PostViewDto(post, userReaction, latestLikes);
   }
