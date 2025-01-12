@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Blog, BlogDocument, BlogModelType } from '../domain/blog.entity';
 import { BlogViewDto } from '../api/dto/blog.view-dto';
@@ -11,14 +11,14 @@ import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 export class BlogsQueryRepository {
   constructor(@InjectModel(Blog.name) private BlogModel: BlogModelType) {}
 
-  async findById(id: string): Promise<BlogViewDto | null> {
+  async findByIdOrNotFoundException(id: string): Promise<BlogViewDto> {
     console.log(id);
     const blog = await this.BlogModel.findOne({
       _id: id,
       deletionStatus: DeletionStatus.NotDeleted,
     }).exec();
     if (!blog) {
-      return null;
+      throw new NotFoundException('Blog not found');
     }
     return new BlogViewDto(blog);
   }
@@ -34,7 +34,6 @@ export class BlogsQueryRepository {
       filter.name = { $regex: query.searchNameTerm, $options: 'i' };
     }
 
-    console.log(query);
     const blogs = await this.BlogModel.find(filter)
       .sort({ [query.sortBy]: query.sortDirection })
       .skip(query.calculateSkip())

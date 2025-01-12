@@ -8,14 +8,18 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from '../application/users-service';
-import { CreateUserDto } from '../dto/user.create-dto';
+import { UsersService } from '../application/users.service';
+import { CreateUserDto } from '../dto/user.main-dto';
 import { GetUsersQueryParams } from './dto/get-users-query-params.input-dto';
 import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
 import { UsersQueryRepository } from '../infrastructure/user.query-repository';
 import { UserViewDto } from './dto/user.view-dto';
+import { ObjectIdValidationPipe } from '../../../core/pipes/objectId-validation-pipe';
+import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
 
+@UseGuards(BasicAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(
@@ -23,7 +27,9 @@ export class UsersController {
     private usersService: UsersService,
   ) {}
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<UserViewDto> {
+  async getById(
+    @Param('id', ObjectIdValidationPipe) id: string,
+  ): Promise<UserViewDto> {
     return this.usersQueryRepository.getByIdOrNotFoundFail(id);
   }
   @Get()
@@ -39,7 +45,7 @@ export class UsersController {
   }
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id', ObjectIdValidationPipe) id: string): Promise<void> {
     return await this.usersService.delete(id);
   }
 }

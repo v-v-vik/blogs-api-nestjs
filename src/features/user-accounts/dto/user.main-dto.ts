@@ -6,3 +6,8 @@ export class CreateUserDto {
 // export class UpdateUserDto {
 //   email: string;
 // }
+
+export class LoginUserDto {
+  loginOrEmail: string;
+  password: string;
+}

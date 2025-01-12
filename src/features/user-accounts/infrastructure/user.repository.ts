@@ -18,7 +18,38 @@ export class UsersRepository {
     await user.save();
   }
 
-  async findOneOrNotFoundFail(id: string): Promise<UserDocument | null> {
-    return this.findById(id);
+  async findByLoginAndEmail(
+    login: string,
+    email: string,
+  ): Promise<UserDocument | null> {
+    return this.UserModel.findOne({
+      $and: [
+        { deletionStatus: DeletionStatus.NotDeleted },
+        {
+          $or: [{ 'accountData.login': login }, { 'accountData.email': email }],
+        },
+      ],
+    });
+  }
+
+  async findByLoginOrEmail(loginOrEmail: string): Promise<UserDocument | null> {
+    return this.UserModel.findOne({
+      $and: [
+        { deletionStatus: DeletionStatus.NotDeleted },
+        {
+          $or: [
+            { 'accountData.login': loginOrEmail },
+            { 'accountData.email': loginOrEmail },
+          ],
+        },
+      ],
+    });
+  }
+
+  async findByCode(code: string): Promise<UserDocument | null> {
+    return this.UserModel.findOne({
+      'emailConfirmation.confirmationCode': code,
+      deletionStatus: DeletionStatus.NotDeleted,
+    });
   }
 }

@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Param,
   Post,
   Put,
@@ -23,6 +22,7 @@ import { PostsService } from '../../posts/application/posts.service';
 import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repository';
 import { CreatePostDto } from '../../posts/dto/post.main-dto';
 import { CreatePostInputViaBlogDto } from './dto/post-via-blog.input-dto';
+import { ObjectIdValidationPipe } from '../../../../core/pipes/objectId-validation-pipe';
 
 @Controller('blogs')
 export class BlogsController {
@@ -41,35 +41,31 @@ export class BlogsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<BlogViewDto | null> {
-    const blog = await this.blogsQueryRepository.findById(id);
-    if (!blog) {
-      throw new NotFoundException('Blog not found.');
-    }
-    return blog;
+  async findById(
+    @Param('id', ObjectIdValidationPipe) id: string,
+  ): Promise<BlogViewDto> {
+    const foundBlogId = await this.blogsService.findById(id);
+    return this.blogsQueryRepository.findByIdOrNotFoundException(foundBlogId);
   }
 
   @Post()
   async create(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.create(body);
-    const blog = await this.blogsQueryRepository.findById(blogId);
-    if (!blog) {
-      throw new NotFoundException('Blog not found.');
-    }
-    return blog;
+    return this.blogsQueryRepository.findByIdOrNotFoundException(blogId);
   }
 
   @Get(':id/posts')
   async findPostsById(
-    @Param('id') id: string,
+    @Param('id', ObjectIdValidationPipe) id: string,
     @Query() query: GetPostsQueryParams,
   ): Promise<PaginatedViewDto<PostViewDto[]>> {
-    return this.postsService.findAllByBlogId(query, id);
+    const foundBlogId = await this.blogsService.findById(id);
+    return this.postsQueryRepository.findAll(query, foundBlogId);
   }
 
   @Post(':id/posts')
   async createPostById(
-    @Param('id') id: string,
+    @Param('id', ObjectIdValidationPipe) id: string,
     @Body() body: CreatePostInputViaBlogDto,
   ): Promise<PostViewDto> {
     const mainDto: CreatePostDto = {
@@ -79,22 +75,21 @@ export class BlogsController {
       blogId: id,
     };
     const postId = await this.postsService.create(mainDto);
-    const post = await this.postsQueryRepository.findById(postId);
-    if (!post) {
-      throw new NotFoundException('Post not found.');
-    }
-    return post;
+    return this.postsQueryRepository.findByIdOrNotFoundException(postId);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async update(@Body() body: UpdateBlogInputDto, @Param('id') id: string) {
+  async update(
+    @Body() body: UpdateBlogInputDto,
+    @Param('id', ObjectIdValidationPipe) id: string,
+  ) {
     return this.blogsService.update(id, body);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id', ObjectIdValidationPipe) id: string) {
     return this.blogsService.delete(id);
   }
 }

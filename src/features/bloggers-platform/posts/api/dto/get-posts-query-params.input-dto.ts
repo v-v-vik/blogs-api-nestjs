@@ -2,6 +2,7 @@ import {
   BaseSortablePaginationParams,
   SortDirection,
 } from '../../../../../core/dto/base.query-params.input-dto';
+import { IsEnum } from 'class-validator';
 
 export enum PostsSortBy {
   CreatedAt = 'createdAt',
@@ -9,6 +10,7 @@ export enum PostsSortBy {
 }
 
 export class GetPostsQueryParams extends BaseSortablePaginationParams<PostsSortBy> {
+  @IsEnum(PostsSortBy)
   sortBy: PostsSortBy = PostsSortBy.CreatedAt;
   sortDirection: SortDirection = SortDirection.Desc;
 }

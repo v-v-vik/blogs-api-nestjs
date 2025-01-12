@@ -6,12 +6,23 @@ import { FilterQuery } from 'mongoose';
 import { GetUsersQueryParams } from '../api/dto/get-users-query-params.input-dto';
 import { UserViewDto } from '../api/dto/user.view-dto';
 import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
+import { InfoUserViewDto } from '../api/dto/auth/user-info.view-dto';
 
 export class UsersQueryRepository {
   constructor(
     @InjectModel(User.name)
     private UserModel: UserModelType,
   ) {}
+
+  async aboutMeInfo(userId: string): Promise<InfoUserViewDto | null> {
+    const user = await this.UserModel.findOne({
+      _id: userId,
+    });
+    if (!user) {
+      return null;
+    }
+    return new InfoUserViewDto(user);
+  }
 
   async getByIdOrNotFoundFail(id: string): Promise<UserViewDto> {
     const user = await this.UserModel.findOne({

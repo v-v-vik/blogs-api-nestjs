@@ -35,4 +35,12 @@ export class BlogsService {
     blog.flagAsDeleted();
     await this.blogsRepository.save(blog);
   }
+
+  async findById(id: string): Promise<string> {
+    const res = await this.blogsRepository.findById(id);
+    if (!res) {
+      throw new NotFoundException('Blog not found.');
+    }
+    return res._id.toString();
+  }
 }

@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Param,
   Post,
   Put,
@@ -17,6 +16,7 @@ import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { PostViewDto } from './dto/post.view-dto';
 import { PostsQueryRepository } from '../infrastructure/post.query-repository';
 import { CreatePostInputDto, UpdatePostInputDto } from './dto/post.input-dto';
+import { ObjectIdValidationPipe } from '../../../../core/pipes/objectId-validation-pipe';
 
 @Controller('posts')
 export class PostsController {
@@ -33,12 +33,10 @@ export class PostsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<PostViewDto> {
-    const post = await this.postsQueryRepository.findById(id);
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-    return post;
+  async findById(
+    @Param('id', ObjectIdValidationPipe) id: string,
+  ): Promise<PostViewDto> {
+    return this.postsQueryRepository.findByIdOrNotFoundException(id);
   }
 
   // @Get(':id/comments')
@@ -50,17 +48,13 @@ export class PostsController {
   @Post()
   async create(@Body() body: CreatePostInputDto): Promise<PostViewDto> {
     const postId = await this.postsService.create(body);
-    const post = await this.postsQueryRepository.findById(postId);
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-    return post;
+    return this.postsQueryRepository.findByIdOrNotFoundException(postId);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
-    @Param('id') id: string,
+    @Param('id', ObjectIdValidationPipe) id: string,
     @Body() body: UpdatePostInputDto,
   ): Promise<void> {
     return this.postsService.update(id, body);
@@ -68,7 +62,7 @@ export class PostsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id', ObjectIdValidationPipe) id: string): Promise<void> {
     return this.postsService.delete(id);
   }
 }
