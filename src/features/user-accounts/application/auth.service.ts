@@ -1,22 +1,18 @@
-import { InjectModel } from '@nestjs/mongoose';
-import { AccountStatus, User, UserModelType } from '../domain/user.entity';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { AccountStatus } from '../domain/user.entity';
+import { Injectable } from '@nestjs/common';
 import { UsersRepository } from '../infrastructure/user.repository';
 import { BcryptService } from './bcrypt.service';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../../notifications/email.service';
 import { randomUUID } from 'node:crypto';
+import {
+  BadRequestDomainException,
+  UnauthorizedDomainException,
+} from '../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name)
-    private UserModel: UserModelType,
     private usersRepository: UsersRepository,
     private bcryptService: BcryptService,
     private jwtService: JwtService,
@@ -28,25 +24,22 @@ export class AuthService {
     //deviceId creation logic
     //RT creation
     //adding session to DB
-    const token = this.jwtService.sign(
-      {
-        id: userId,
-      },
-      {
-        secret: 'access-token-secret',
-        expiresIn: '5m',
-      },
-    );
+    console.log(userId);
+    const token = this.jwtService.sign({
+      id: userId,
+    });
     return { accessToken: token };
   }
 
   async checkCredentials(loginOrEmail: string, password: string) {
     const user = await this.usersRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) {
-      throw new UnauthorizedException(`User ${loginOrEmail} not found`);
+      throw UnauthorizedDomainException.create(
+        `User ${loginOrEmail} not found`,
+      );
     }
     if (user.emailConfirmation.status === AccountStatus.NotConfirmed) {
-      throw new UnauthorizedException(
+      throw UnauthorizedDomainException.create(
         `User ${user.accountData.login} is not confirmed`,
       );
     }
@@ -55,21 +48,27 @@ export class AuthService {
       user.accountData.passwordHash,
     );
     if (!isPasswordCorrect) {
-      throw new UnauthorizedException('Wrong Password');
+      throw UnauthorizedDomainException.create('Wrong Password');
     }
-    return user;
+    return { id: user._id.toString() };
   }
 
   async confirmRegistration(code: string) {
     const foundUser = await this.usersRepository.findByCode(code);
     if (!foundUser) {
-      throw new BadRequestException(`User with ${code} not found`);
+      throw BadRequestDomainException.create(
+        `User with ${code} not found`,
+        'code',
+      );
     }
     if (foundUser.emailConfirmation.status === AccountStatus.Confirmed) {
-      throw new BadRequestException(`${code} was already applied`);
+      throw BadRequestDomainException.create(
+        `${code} was already applied`,
+        'code',
+      );
     }
     if (foundUser.emailConfirmation.expirationDate <= new Date()) {
-      throw new BadRequestException(`${code} has expired`);
+      throw BadRequestDomainException.create(`${code} has expired`, 'code');
     }
     foundUser.flagAsConfirmed();
     await this.usersRepository.save(foundUser);
@@ -78,7 +77,16 @@ export class AuthService {
   async resendConfirmationEmail(email: string) {
     const foundUser = await this.usersRepository.findByLoginOrEmail(email);
     if (!foundUser) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      throw BadRequestDomainException.create(
+        `User with email ${email} not found`,
+        'email',
+      );
+    }
+    if (foundUser.emailConfirmation.status === AccountStatus.Confirmed) {
+      throw BadRequestDomainException.create(
+        `${email} was already confirmed`,
+        'email',
+      );
     }
     const newCode = randomUUID();
     foundUser.updateCode(newCode);
@@ -107,13 +115,13 @@ export class AuthService {
   async passwordUpdate(newPassword: string, code: string) {
     const codePayload = await this.jwtService.verify(code);
     if (!codePayload) {
-      throw new BadRequestException(`${code} is not valid or expired`);
+      throw BadRequestDomainException.create(`${code} is not valid or expired`);
     }
     const foundUser = await this.usersRepository.findByLoginOrEmail(
       codePayload.email,
     );
     if (!foundUser) {
-      throw new BadRequestException(
+      throw BadRequestDomainException.create(
         `No user with email ${codePayload.email} found`,
       );
     }

@@ -5,6 +5,7 @@ import {
   UpdateBlogDomainDto,
 } from './dto/blog.domain-dto';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Schema({ timestamps: true })
 export class Blog {
@@ -38,7 +39,7 @@ export class Blog {
 
   flagAsDeleted() {
     if (this.deletionStatus !== DeletionStatus.NotDeleted) {
-      throw new Error('Entity already deleted');
+      throw NotFoundDomainException.create('Entity already deleted');
     }
     this.deletionStatus = DeletionStatus.PermanentDeleted;
   }

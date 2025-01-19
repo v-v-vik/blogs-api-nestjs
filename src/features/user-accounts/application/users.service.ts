@@ -1,14 +1,14 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { UsersRepository } from '../infrastructure/user.repository';
 import { User, UserModelType } from '../domain/user.entity';
 import { CreateUserDto } from '../dto/user.main-dto';
 import { BcryptService } from './bcrypt.service';
 import { EmailService } from '../../notifications/email.service';
+import {
+  BadRequestDomainException,
+  NotFoundDomainException,
+} from '../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class UsersService {
@@ -35,7 +35,7 @@ export class UsersService {
   async delete(id: string) {
     const user = await this.usersRepository.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw NotFoundDomainException.create('User not found');
     }
     user.flagAsDeleted();
     await this.usersRepository.save(user);
@@ -52,7 +52,7 @@ export class UsersService {
       errors.push({ field: 'email', message: 'Email already exists' });
     }
     if (errors.length > 0) {
-      throw new BadRequestException({ errorMessages: errors });
+      throw BadRequestDomainException.createWithArray(errors);
     }
     const passwordHash = await this.bcryptService.passwordHash(password);
     const newUser = this.UserModel.createInstance({

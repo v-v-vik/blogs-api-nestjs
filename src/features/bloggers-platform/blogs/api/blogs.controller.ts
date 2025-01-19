@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { BlogsService } from '../application/blogs.service';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
@@ -23,6 +24,7 @@ import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repo
 import { CreatePostDto } from '../../posts/dto/post.main-dto';
 import { CreatePostInputViaBlogDto } from './dto/post-via-blog.input-dto';
 import { ObjectIdValidationPipe } from '../../../../core/pipes/objectId-validation-pipe';
+import { BasicAuthGuard } from '../../../user-accounts/guards/basic/basic-auth.guard';
 
 @Controller('blogs')
 export class BlogsController {
@@ -48,6 +50,7 @@ export class BlogsController {
     return this.blogsQueryRepository.findByIdOrNotFoundException(foundBlogId);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Post()
   async create(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.create(body);
@@ -63,6 +66,7 @@ export class BlogsController {
     return this.postsQueryRepository.findAll(query, foundBlogId);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Post(':id/posts')
   async createPostById(
     @Param('id', ObjectIdValidationPipe) id: string,
@@ -78,6 +82,7 @@ export class BlogsController {
     return this.postsQueryRepository.findByIdOrNotFoundException(postId);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
@@ -87,6 +92,7 @@ export class BlogsController {
     return this.blogsService.update(id, body);
   }
 
+  @UseGuards(BasicAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ObjectIdValidationPipe) id: string) {

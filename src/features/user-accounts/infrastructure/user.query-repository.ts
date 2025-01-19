@@ -44,17 +44,17 @@ export class UsersQueryRepository {
     if (query.searchLoginTerm) {
       filter.$or = filter.$or || [];
       filter.$or.push({
-        login: { $regex: query.searchLoginTerm, $options: 'i' },
+        'accountData.login': { $regex: query.searchLoginTerm, $options: 'i' },
       });
     }
     if (query.searchEmailTerm) {
       filter.$or = filter.$or || [];
       filter.$or.push({
-        email: { $regex: query.searchEmailTerm, $options: 'i' },
+        'accountData.email': { $regex: query.searchEmailTerm, $options: 'i' },
       });
     }
     const users = await this.UserModel.find(filter)
-      .sort({ [query.sortBy]: query.sortDirection })
+      .sort({ [`accountData.${query.sortBy}`]: query.sortDirection })
       .skip(query.calculateSkip())
       .limit(query.pageSize);
     const totalCount = await this.UserModel.countDocuments(filter);

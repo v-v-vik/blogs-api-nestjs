@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Blog, BlogDocument, BlogModelType } from '../domain/blog.entity';
 import { BlogViewDto } from '../api/dto/blog.view-dto';
@@ -6,6 +6,7 @@ import { GetBlogsQueryParams } from '../api/dto/get-blogs-query-params.input-dto
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { FilterQuery } from 'mongoose';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class BlogsQueryRepository {
@@ -18,7 +19,7 @@ export class BlogsQueryRepository {
       deletionStatus: DeletionStatus.NotDeleted,
     }).exec();
     if (!blog) {
-      throw new NotFoundException('Blog not found');
+      throw NotFoundDomainException.create('Blog not found.');
     }
     return new BlogViewDto(blog);
   }
@@ -33,7 +34,7 @@ export class BlogsQueryRepository {
     if (query.searchNameTerm) {
       filter.name = { $regex: query.searchNameTerm, $options: 'i' };
     }
-
+    console.log(filter);
     const blogs = await this.BlogModel.find(filter)
       .sort({ [query.sortBy]: query.sortDirection })
       .skip(query.calculateSkip())

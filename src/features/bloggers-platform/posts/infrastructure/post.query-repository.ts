@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument, PostModelType } from '../domain/post.entity';
 import { NewestLikesViewDto, PostViewDto } from '../api/dto/post.view-dto';
@@ -7,6 +7,7 @@ import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { LikeStatus } from '../../likes/domain/like.entity';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import { FilterQuery } from 'mongoose';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class PostsQueryRepository {
@@ -20,7 +21,7 @@ export class PostsQueryRepository {
       deletionStatus: DeletionStatus.NotDeleted,
     });
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw NotFoundDomainException.create('Post not found');
     }
     return new PostViewDto(post, userReaction, latestLikes);
   }

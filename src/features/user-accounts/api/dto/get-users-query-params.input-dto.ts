@@ -13,9 +13,11 @@ export enum UsersSortBy {
 export class GetUsersQueryParams extends BaseSortablePaginationParams<UsersSortBy> {
   @IsEnum(UsersSortBy)
   sortBy: UsersSortBy = UsersSortBy.CreatedAt;
+
   @IsString()
   @IsOptional()
   searchLoginTerm: string | null = null;
+
   @IsString()
   @IsOptional()
   searchEmailTerm: string | null = null;

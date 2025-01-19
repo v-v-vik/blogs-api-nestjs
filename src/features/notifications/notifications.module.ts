@@ -6,9 +6,17 @@ import { EmailTemplates } from './email.templates';
 @Module({
   imports: [
     MailerModule.forRoot({
-      transport: 'smtps://veradev1327@gmail.com:mowh qhfq addx qdvr',
+      transport: {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'veradev1327@gmail.com',
+          pass: 'mowh qhfq addx qdvr',
+        },
+      },
       defaults: {
-        from: '"nest-modules" <modules@nestjs.com>',
+        from: '"No Reply" <no-reply@localhost.com>',
       },
     }),
   ],

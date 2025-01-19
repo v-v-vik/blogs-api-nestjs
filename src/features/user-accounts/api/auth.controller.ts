@@ -11,7 +11,6 @@ import { UsersService } from '../application/users.service';
 import { UsersQueryRepository } from '../infrastructure/user.query-repository';
 import { AuthService } from '../application/auth.service';
 import { CreateUserInputDto } from './dto/user.input-dto';
-import { LocalAuthGuard } from '../guards/local/local-auth.guard';
 import { ExtractUserFromRequest } from '../guards/decorators/param/user-from-req.decorator';
 import { UserContextDto } from '../guards/dto/user-context.dto';
 import {
@@ -23,6 +22,7 @@ import {
   PasswordRecoveryEmailDto,
 } from './dto/auth/password-recovery.input-dto';
 import { JwtAuthGuard } from '../guards/bearer/jwt-auth.guard';
+import { LocalAuthGuard } from '../guards/local/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -33,8 +33,8 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
+  @HttpCode(HttpStatus.OK)
   async login(
     //@Request() req: any -- to get ip, userAgent
     @ExtractUserFromRequest() user: UserContextDto,
@@ -43,7 +43,9 @@ export class AuthController {
   }
 
   @Post('registration')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async registerUser(@Body() dto: CreateUserInputDto) {
+    console.log(dto);
     return this.userService.register(dto);
   }
 
@@ -55,10 +57,13 @@ export class AuthController {
   }
 
   @Post('registration-confirmation')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async confirmRegistration(@Body() dto: RegistrationConfirmationCodeDto) {
     return this.authService.confirmRegistration(dto.code);
   }
+
   @Post('registration-email-resending')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async resendConfirmationEmail(@Body() dto: RegistrationEmailResendingDto) {
     return this.authService.resendConfirmationEmail(dto.email);
   }

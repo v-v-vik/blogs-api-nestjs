@@ -9,6 +9,7 @@ import {
   UpdatePostDomainDto,
 } from './dto/post.domain-dto';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Schema({ timestamps: true })
 export class Post {
@@ -54,7 +55,7 @@ export class Post {
 
   flagAsDeleted() {
     if (this.deletionStatus !== DeletionStatus.NotDeleted) {
-      throw new Error('Entity already deleted');
+      throw NotFoundDomainException.create('Entity already deleted');
     }
     this.deletionStatus = DeletionStatus.PermanentDeleted;
   }

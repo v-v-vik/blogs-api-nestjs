@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostModelType } from '../domain/post.entity';
 import { BlogsRepository } from '../../blogs/infrastructure/blog.repository';
 import { PostRepository } from '../infrastructure/post.repository';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.main-dto';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class PostsService {
@@ -16,7 +17,7 @@ export class PostsService {
   async create(dto: CreatePostDto): Promise<string> {
     const foundBlog = await this.blogsRepository.findById(dto.blogId);
     if (!foundBlog) {
-      throw new NotFoundException('Blog not found.');
+      throw NotFoundDomainException.create('Blog not found.');
     }
     const domainDto = {
       title: dto.title,
@@ -33,7 +34,7 @@ export class PostsService {
   async update(id: string, dto: UpdatePostDto): Promise<void> {
     const foundBlog = await this.blogsRepository.findById(dto.blogId);
     if (!foundBlog) {
-      throw new NotFoundException('Blog not found.');
+      throw NotFoundDomainException.create('Blog not found.');
     }
     const domainDto = {
       ...dto,
@@ -41,7 +42,7 @@ export class PostsService {
     };
     const post = await this.postRepository.findById(id);
     if (!post) {
-      throw new NotFoundException('Post not found.');
+      throw NotFoundDomainException.create('Post not found.');
     }
     post.update(domainDto);
     await this.postRepository.save(post);
@@ -50,7 +51,7 @@ export class PostsService {
   async delete(id: string): Promise<void> {
     const post = await this.postRepository.findById(id);
     if (!post) {
-      throw new NotFoundException('Post not found.');
+      throw NotFoundDomainException.create('Post not found.');
     }
     post.flagAsDeleted();
     await this.postRepository.save(post);

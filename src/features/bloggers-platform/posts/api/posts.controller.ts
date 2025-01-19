@@ -43,13 +43,21 @@ export class PostsController {
   // async findCommentsById(
   //   @Param('id') id: string,
   //   @Query() query: GetCommentsQueryParams,
-  // ): Promise<PaginatedViewDto<CommentViewDto[]>> {}
+  // ): Promise<PaginatedViewDto<CommentViewDto[]>> {
+  //const foundPost = this.postService.findById(id);
+  // return this.commentQueryRepository.getByPostId(query, foundPost.id)}
 
   @Post()
   async create(@Body() body: CreatePostInputDto): Promise<PostViewDto> {
     const postId = await this.postsService.create(body);
     return this.postsQueryRepository.findByIdOrNotFoundException(postId);
   }
+
+  // @Post(':id/comments')
+  // async createComment(){}
+
+  // @Put('id/like-status')
+  // async addReaction() {}
 
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
