@@ -18,8 +18,10 @@ import { UserViewDto } from './dto/user.view-dto';
 import { ObjectIdValidationPipe } from '../../../core/pipes/objectId-validation-pipe';
 import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
 import { CreateUserInputDto } from './dto/user.input-dto';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @UseGuards(BasicAuthGuard)
+@SkipThrottle()
 @Controller('users')
 export class UsersController {
   constructor(

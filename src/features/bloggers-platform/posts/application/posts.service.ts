@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostModelType } from '../domain/post.entity';
 import { BlogsRepository } from '../../blogs/infrastructure/blog.repository';
-import { PostRepository } from '../infrastructure/post.repository';
+import { PostsRepository } from '../infrastructure/post.repository';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.main-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
@@ -10,7 +10,7 @@ import { NotFoundDomainException } from '../../../../core/exceptions/domain-exce
 export class PostsService {
   constructor(
     @InjectModel(Post.name) private PostModel: PostModelType,
-    private postRepository: PostRepository,
+    private postsRepository: PostsRepository,
     private blogsRepository: BlogsRepository,
   ) {}
 
@@ -27,7 +27,7 @@ export class PostsService {
       blogName: foundBlog.name,
     };
     const post = this.PostModel.createInstance(domainDto);
-    await this.postRepository.save(post);
+    await this.postsRepository.save(post);
     return post._id.toString();
   }
 
@@ -40,21 +40,21 @@ export class PostsService {
       ...dto,
       blogName: foundBlog.name,
     };
-    const post = await this.postRepository.findById(id);
+    const post = await this.postsRepository.findByIdOrNotFoundException(id);
     if (!post) {
       throw NotFoundDomainException.create('Post not found.');
     }
     post.update(domainDto);
-    await this.postRepository.save(post);
+    await this.postsRepository.save(post);
   }
 
   async delete(id: string): Promise<void> {
-    const post = await this.postRepository.findById(id);
+    const post = await this.postsRepository.findByIdOrNotFoundException(id);
     if (!post) {
       throw NotFoundDomainException.create('Post not found.');
     }
     post.flagAsDeleted();
-    await this.postRepository.save(post);
+    await this.postsRepository.save(post);
   }
 
   //async findAllWithBlogId(id: string): Promise<Post[]> {}

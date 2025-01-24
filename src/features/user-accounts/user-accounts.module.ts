@@ -9,22 +9,43 @@ import { BcryptService } from './application/bcrypt.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuthController } from './api/auth.controller';
 import { AuthService } from './application/auth.service';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { JwtStrategy } from './guards/bearer/jwt.strategy';
 import { LocalStrategy } from './guards/local/local.strategy';
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { UserAccountsConfig } from './config/user-accounts.config';
+import {
+  ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
+  REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
+} from './constants/auth-tokens.inject-constants';
+import { Session, sessionSchema } from './sessions/domain/session.entity';
+import { SessionsRepository } from './sessions/infrastructure/session.repository';
+import { LoginUserUseCase } from './application/useCases/login-user.usercase';
+import { RtJwtStrategy } from './guards/refresh-token/rt-jwt.strategy';
+import { RefreshTokenUseCase } from './application/useCases/refresh-token.usecase';
+import { SessionsController } from './sessions/api/sessions.controller';
+import { SessionsQueryRepository } from './sessions/infrastructure/session.query-repository';
+import { TerminateAllSessionsUseCase } from './sessions/application/useCases/terminate-all-sessions.usecase';
+import { TerminateSessionUseCase } from './sessions/application/useCases/terminate-session-by-id.usecase';
+import { LogoutUserUseCase } from './application/useCases/logout-user.usecase';
+
+const useCases = [
+  LoginUserUseCase,
+  RefreshTokenUseCase,
+  TerminateAllSessionsUseCase,
+  TerminateSessionUseCase,
+  LogoutUserUseCase,
+];
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Session.name, schema: sessionSchema },
+    ]),
     NotificationsModule,
-    JwtModule.register({
-      secret: 'access-token-secret', //TODO: move to env
-      signOptions: { expiresIn: '5m' },
-    }),
+    JwtModule,
   ],
-  controllers: [UsersController, AuthController],
+  controllers: [UsersController, AuthController, SessionsController],
   providers: [
     UsersService,
     UsersRepository,
@@ -33,11 +54,32 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     AuthService,
     LocalStrategy,
     JwtStrategy,
+    RtJwtStrategy,
     {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      provide: ACCESS_TOKEN_STRATEGY_INJECT_TOKEN,
+      useFactory: (userAccountConfig: UserAccountsConfig): JwtService => {
+        return new JwtService({
+          secret: userAccountConfig.accessTokenSecret,
+          signOptions: { expiresIn: userAccountConfig.accessTokenExpiresIn },
+        });
+      },
+      inject: [UserAccountsConfig],
     },
+    {
+      provide: REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
+      useFactory: (userAccountConfig: UserAccountsConfig): JwtService => {
+        return new JwtService({
+          secret: userAccountConfig.refreshTokenSecret,
+          signOptions: { expiresIn: userAccountConfig.refreshTokenExpiresIn },
+        });
+      },
+      inject: [UserAccountsConfig],
+    },
+    UserAccountsConfig,
+    SessionsRepository,
+    ...useCases,
+    SessionsQueryRepository,
   ],
-  exports: [MongooseModule, JwtStrategy],
+  exports: [MongooseModule, JwtStrategy, UsersRepository],
 })
 export class UserAccountsModule {}

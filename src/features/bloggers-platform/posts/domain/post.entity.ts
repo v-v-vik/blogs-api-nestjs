@@ -67,6 +67,13 @@ export class Post {
     this.blogId = dto.blogId;
     this.blogName = dto.blogName;
   }
+
+  updateLikeCount(dto: LikesInfo) {
+    this.extendedLikesInfo = {
+      likesCount: dto.likesCount,
+      dislikesCount: dto.dislikesCount,
+    };
+  }
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

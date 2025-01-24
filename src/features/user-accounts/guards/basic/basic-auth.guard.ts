@@ -6,12 +6,20 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { CoreConfig } from '../../../../core/core.config';
 
 @Injectable()
 export class BasicAuthGuard implements CanActivate {
-  private readonly validUsername = 'admin';
-  private readonly validPassword = 'qwerty';
-  constructor(private reflector: Reflector) {}
+  private readonly validUsername: string;
+  private readonly validPassword: string;
+  constructor(
+    private reflector: Reflector,
+    private coreConfig: CoreConfig,
+  ) {
+    const [username, password] = this.coreConfig.adminCredentials.split(':');
+    this.validUsername = username;
+    this.validPassword = password;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

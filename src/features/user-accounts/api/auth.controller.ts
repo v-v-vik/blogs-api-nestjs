@@ -5,6 +5,8 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../application/users.service';
@@ -23,6 +25,16 @@ import {
 } from './dto/auth/password-recovery.input-dto';
 import { JwtAuthGuard } from '../guards/bearer/jwt-auth.guard';
 import { LocalAuthGuard } from '../guards/local/local-auth.guard';
+import { Response, Request } from 'express';
+import { CommandBus } from '@nestjs/cqrs';
+import { LoginUserCommand } from '../application/useCases/login-user.usercase';
+import { UnauthorizedDomainException } from '../../../core/exceptions/domain-exceptions';
+import { RefreshTokenCommand } from '../application/useCases/refresh-token.usecase';
+import { RtJwtAuthGuard } from '../guards/refresh-token/rt-jwt-auth.guard';
+import { ExtractPayloadFromRequest } from '../guards/decorators/param/rt-payload-from-req.decorator';
+import { RefreshTokenPayload } from '../dto/tokens/tokens-payload.dto';
+import { LogoutUserCommand } from '../application/useCases/logout-user.usecase';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -30,16 +42,24 @@ export class AuthController {
     private authService: AuthService,
     private userService: UsersService,
     private usersQueryRepository: UsersQueryRepository,
+    private commandBus: CommandBus,
   ) {}
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   async login(
-    //@Request() req: any -- to get ip, userAgent
     @ExtractUserFromRequest() user: UserContextDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ): Promise<{ accessToken: string }> {
-    return this.authService.loginUser(user.id); // ip, userAgent)
+    const userAgent = request.headers['user-agent'] || 'unknown device';
+    if (request.ip) {
+      return await this.commandBus.execute(
+        new LoginUserCommand(user.id, response, request.ip, userAgent),
+      );
+    }
+    throw UnauthorizedDomainException.create('No IP address indicated');
   }
 
   @Post('registration')
@@ -76,5 +96,30 @@ export class AuthController {
   @Post('new-password')
   async changePassword(@Body() dto: NewPasswordRecoveryInputDto) {
     return this.authService.passwordUpdate(dto.newPassword, dto.recoveryCode);
+  }
+
+  @Post('logout')
+  @UseGuards(RtJwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(
+    @Res({ passthrough: true }) response: Response,
+    @ExtractPayloadFromRequest() tokenPayload: RefreshTokenPayload,
+  ) {
+    return this.commandBus.execute(
+      new LogoutUserCommand(tokenPayload.deviceId, response),
+    );
+  }
+
+  @SkipThrottle()
+  @Post('refresh-token')
+  @UseGuards(RtJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async refreshToken(
+    @Res({ passthrough: true }) response: Response,
+    @ExtractPayloadFromRequest() tokenPayload: RefreshTokenPayload,
+  ) {
+    return this.commandBus.execute(
+      new RefreshTokenCommand(tokenPayload, response),
+    );
   }
 }

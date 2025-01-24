@@ -5,10 +5,7 @@ import { User, UserModelType } from '../domain/user.entity';
 import { CreateUserDto } from '../dto/user.main-dto';
 import { BcryptService } from './bcrypt.service';
 import { EmailService } from '../../notifications/email.service';
-import {
-  BadRequestDomainException,
-  NotFoundDomainException,
-} from '../../../core/exceptions/domain-exceptions';
+import { BadRequestDomainException } from '../../../core/exceptions/domain-exceptions';
 
 @Injectable()
 export class UsersService {
@@ -33,10 +30,7 @@ export class UsersService {
   }
 
   async delete(id: string) {
-    const user = await this.usersRepository.findById(id);
-    if (!user) {
-      throw NotFoundDomainException.create('User not found');
-    }
+    const user = await this.usersRepository.findByIdOrNotFoundException(id);
     user.flagAsDeleted();
     await this.usersRepository.save(user);
   }

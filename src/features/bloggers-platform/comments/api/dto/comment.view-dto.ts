@@ -4,7 +4,7 @@ import { CommentDocument } from '../../domain/comment.entity';
 class LikesInfoView {
   likesCount: number;
   dislikesCount: number;
-  myStatus: LikeStatus;
+  myStatus: string;
 
   constructor(comment: CommentDocument, userReaction: LikeStatus) {
     this.likesCount = comment.likesInfo.likesCount;

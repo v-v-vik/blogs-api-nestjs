@@ -1,6 +1,7 @@
 import { CreatePostDto, UpdatePostDto } from '../../dto/post.main-dto';
 import { IsNotEmpty, IsString, Length } from 'class-validator';
 import { Trim } from '../../../../../core/decorators/trim-decorator';
+import { BlogIdExists } from '../validation/blogIdExists.decorator';
 
 export class CreatePostInputDto implements CreatePostDto {
   @IsString()
@@ -21,6 +22,7 @@ export class CreatePostInputDto implements CreatePostDto {
   @Length(1, 1000)
   content: string;
 
+  @BlogIdExists()
   blogId: string;
 }
 
@@ -43,5 +45,6 @@ export class UpdatePostInputDto implements UpdatePostDto {
   @Length(1, 1000)
   content: string;
 
+  @BlogIdExists()
   blogId: string;
 }

@@ -13,7 +13,6 @@ export class BlogsQueryRepository {
   constructor(@InjectModel(Blog.name) private BlogModel: BlogModelType) {}
 
   async findByIdOrNotFoundException(id: string): Promise<BlogViewDto> {
-    console.log(id);
     const blog = await this.BlogModel.findOne({
       _id: id,
       deletionStatus: DeletionStatus.NotDeleted,

@@ -15,21 +15,9 @@ export class AuthService {
   constructor(
     private usersRepository: UsersRepository,
     private bcryptService: BcryptService,
-    private jwtService: JwtService,
     private emailService: EmailService,
+    private jwtService: JwtService,
   ) {}
-
-  async loginUser(userId: string): Promise<{ accessToken: string }> {
-    //ip, usersAgent ) {
-    //deviceId creation logic
-    //RT creation
-    //adding session to DB
-    console.log(userId);
-    const token = this.jwtService.sign({
-      id: userId,
-    });
-    return { accessToken: token };
-  }
 
   async checkCredentials(loginOrEmail: string, password: string) {
     const user = await this.usersRepository.findByLoginOrEmail(loginOrEmail);
