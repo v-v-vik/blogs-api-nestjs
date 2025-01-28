@@ -2,7 +2,7 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class JwtOptionalAuthGuard extends AuthGuard('jwt') {
+export class JwtOptionalAuthGuard extends AuthGuard('jwt-access') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }
@@ -10,9 +10,9 @@ export class JwtOptionalAuthGuard extends AuthGuard('jwt') {
   handleRequest(
     err: any,
     user: any,
-    info: any,
-    context: ExecutionContext,
-    status?: any,
+    // info: any,
+    // context: ExecutionContext,
+    // status?: any,
   ) {
     ////https://docs.nestjs.com/recipes/passport#extending-guards
     // super.handleRequest(err, user, info, context, status);
