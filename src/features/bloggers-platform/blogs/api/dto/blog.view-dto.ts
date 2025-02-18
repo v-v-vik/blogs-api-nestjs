@@ -1,4 +1,4 @@
-import { BlogDocument } from '../../domain/blog.entity';
+import { BlogSQLDto } from '../../domain/dto/blog.sql-dto';
 
 export class BlogViewDto {
   id: string;
@@ -8,12 +8,12 @@ export class BlogViewDto {
   createdAt: string;
   isMembership: boolean;
 
-  constructor(blog: BlogDocument) {
-    this.id = blog._id.toString();
+  constructor(blog: BlogSQLDto) {
+    this.id = blog.id.toString();
     this.name = blog.name;
     this.description = blog.description;
     this.websiteUrl = blog.websiteUrl;
-    this.createdAt = blog.createdAt;
+    this.createdAt = blog.createdAt.toISOString();
     this.isMembership = blog.isMembership;
   }
 }

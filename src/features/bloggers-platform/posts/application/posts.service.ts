@@ -1,60 +1,36 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Post, PostModelType } from '../domain/post.entity';
-import { BlogsRepository } from '../../blogs/infrastructure/blog.repository';
-import { PostsRepository } from '../infrastructure/post.repository';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.main-dto';
-import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { SQLBlogsRepository } from '../../blogs/infrastructure/blog-sql.repository';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { SQLPostsRepository } from '../infrastructure/post-sql.repository';
+import { Post } from '../domain/post-sql.entity';
 
 @Injectable()
 export class PostsService {
   constructor(
-    @InjectModel(Post.name) private PostModel: PostModelType,
-    private postsRepository: PostsRepository,
-    private blogsRepository: BlogsRepository,
+    @InjectDataSource() private dataSource: DataSource,
+    private sqlPostsRepository: SQLPostsRepository,
+    private sqlBlogsRepository: SQLBlogsRepository,
   ) {}
 
   async create(dto: CreatePostDto): Promise<string> {
-    const foundBlog = await this.blogsRepository.findById(dto.blogId);
-    if (!foundBlog) {
-      throw NotFoundDomainException.create('Blog not found.');
-    }
-    const domainDto = {
-      title: dto.title,
-      shortDescription: dto.shortDescription,
-      content: dto.content,
-      blogId: dto.blogId,
-      blogName: foundBlog.name,
-    };
-    const post = this.PostModel.createInstance(domainDto);
-    await this.postsRepository.save(post);
-    return post._id.toString();
+    await this.sqlBlogsRepository.findByIdOrNotFoundException(dto.blogId);
+    const post = Post.createNewInstance(dto);
+    return await this.sqlPostsRepository.create(post);
   }
 
   async update(id: string, dto: UpdatePostDto): Promise<void> {
-    const foundBlog = await this.blogsRepository.findById(dto.blogId);
-    if (!foundBlog) {
-      throw NotFoundDomainException.create('Blog not found.');
-    }
-    const domainDto = {
-      ...dto,
-      blogName: foundBlog.name,
-    };
-    const post = await this.postsRepository.findByIdOrNotFoundException(id);
-    if (!post) {
-      throw NotFoundDomainException.create('Post not found.');
-    }
-    post.update(domainDto);
-    await this.postsRepository.save(post);
+    await this.sqlBlogsRepository.findByIdOrNotFoundException(dto.blogId);
+    const post = await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+    post.update(dto);
+    await this.sqlPostsRepository.update(post);
   }
 
   async delete(id: string): Promise<void> {
-    const post = await this.postsRepository.findByIdOrNotFoundException(id);
-    if (!post) {
-      throw NotFoundDomainException.create('Post not found.');
-    }
+    const post = await this.sqlPostsRepository.findByIdOrNotFoundException(id);
     post.flagAsDeleted();
-    await this.postsRepository.save(post);
+    await this.sqlPostsRepository.update(post);
   }
 
   //async findAllWithBlogId(id: string): Promise<Post[]> {}

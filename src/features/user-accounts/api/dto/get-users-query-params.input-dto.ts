@@ -21,5 +21,6 @@ export class GetUsersQueryParams extends BaseSortablePaginationParams<UsersSortB
   @IsString()
   @IsOptional()
   searchEmailTerm: string | null = null;
+  @IsEnum(SortDirection)
   sortDirection: SortDirection = SortDirection.Desc;
 }

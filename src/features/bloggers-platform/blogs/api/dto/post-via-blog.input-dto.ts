@@ -20,3 +20,23 @@ export class CreatePostInputViaBlogDto {
   @Length(1, 1000)
   content: string;
 }
+
+export class UpdatePostInputViaBlogDto {
+  @IsString()
+  @Trim()
+  @IsNotEmpty()
+  @Length(1, 30)
+  title: string;
+
+  @IsString()
+  @Trim()
+  @IsNotEmpty()
+  @Length(1, 100)
+  shortDescription: string;
+
+  @IsString()
+  @Trim()
+  @IsNotEmpty()
+  @Length(1, 1000)
+  content: string;
+}

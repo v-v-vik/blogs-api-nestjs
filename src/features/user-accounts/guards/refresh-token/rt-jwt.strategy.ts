@@ -4,14 +4,14 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { RefreshTokenPayload } from '../../dto/tokens/tokens-payload.dto';
 import { Request } from 'express';
 import { UserAccountsConfig } from '../../config/user-accounts.config';
-import { SessionsRepository } from '../../sessions/infrastructure/session.repository';
 import { UnauthorizedDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { SQLSessionsRepository } from '../../sessions/infrastructure/session-sql.repository';
 
 @Injectable()
 export class RtJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
     private userAccountsConfig: UserAccountsConfig,
-    private sessionsRepository: SessionsRepository,
+    private sqlSessionsRepository: SQLSessionsRepository,
   ) {
     const secret = userAccountsConfig.refreshTokenSecret;
 
@@ -32,7 +32,8 @@ export class RtJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   async validate(
     payload: RefreshTokenPayload,
   ): Promise<RefreshTokenPayload | boolean> {
-    const isSessionListed = await this.sessionsRepository.tokenListed(payload);
+    const isSessionListed =
+      await this.sqlSessionsRepository.tokenListed(payload);
     console.log(isSessionListed);
     console.log('payload: ', payload);
     if (isSessionListed) {

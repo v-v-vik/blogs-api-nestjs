@@ -1,13 +1,13 @@
-import { UserDocument } from '../../../domain/user.entity';
+import { UserSQLDto } from '../../../domain/dto/user.sql-dto';
 
 export class InfoUserViewDto {
   email: string;
   login: string;
   userId: string;
 
-  constructor(user: UserDocument) {
-    this.email = user.accountData.email;
-    this.login = user.accountData.login;
-    this.userId = user._id.toString();
+  constructor(user: UserSQLDto) {
+    this.email = user.email;
+    this.login = user.login;
+    this.userId = user.id.toString();
   }
 }

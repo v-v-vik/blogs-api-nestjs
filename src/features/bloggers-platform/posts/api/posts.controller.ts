@@ -14,36 +14,36 @@ import {
 import { PostsService } from '../application/posts.service';
 import { GetPostsQueryParams } from './dto/get-posts-query-params.input-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
-import { PostViewDto } from './dto/post.view-dto';
-import { PostsQueryRepository } from '../infrastructure/post.query-repository';
+import { PostSQLViewDto } from './dto/post-sql.view-dto';
 import { CreatePostInputDto, UpdatePostInputDto } from './dto/post.input-dto';
-import { ObjectIdValidationPipe } from '../../../../core/pipes/objectId-validation-pipe';
-import { PostsRepository } from '../infrastructure/post.repository';
 import { JwtAuthGuard } from '../../../user-accounts/guards/bearer/jwt-auth.guard';
 import { ExtractUserFromRequest } from '../../../user-accounts/guards/decorators/param/user-from-req.decorator';
 import { CreateCommentInputDto } from '../../comments/api/dto/comment.input-dto';
 import { UserContextDto } from '../../../user-accounts/guards/dto/user-context.dto';
 import { CreateCommentCommand } from '../../comments/application/useCases/create-comment.usecase';
 import { CommandBus } from '@nestjs/cqrs';
-import { CommentsQueryRepository } from '../../comments/infrastructure/comments-query.repository';
 import { CommentViewDto } from '../../comments/api/dto/comment.view-dto';
 import { GetCommentsQueryParams } from '../../comments/api/dto/get-comments-query-params.input-dto';
 import { ExtractUserFromRequestIfExists } from '../../../user-accounts/guards/decorators/param/user-from-req-if-exists.decorator';
-import { ReactionInputDto } from '../../likes/api/dto/like.input-dto';
-import { ReactOnEntityCommand } from '../../likes/application/useCases/react-on-entity.usecase';
 import { BasicAuthGuard } from '../../../user-accounts/guards/basic/basic-auth.guard';
 import { JwtOptionalAuthGuard } from '../../../user-accounts/guards/bearer/optional-jwt-auth.guard';
 import { SkipThrottle } from '@nestjs/throttler';
+import { SQLPostsQueryRepository } from '../infrastructure/post-sql.query-repository';
+import { SQLPostsRepository } from '../infrastructure/post-sql.repository';
+import { ParamsIdValidationPipe } from '../../../../core/pipes/id-param-validation.pipe';
+import { SQLCommentsQueryRepository } from '../../comments/infrastructure/comment-sql.query-repository';
+import { ReactionInputDto } from '../../likes/api/dto/like.input-dto';
+import { ReactOnPostCommand } from '../../likes/application/useCases/react-on-post.usecase';
 
 @SkipThrottle()
 @Controller('posts')
 export class PostsController {
   constructor(
     private postsService: PostsService,
-    private postsQueryRepository: PostsQueryRepository,
-    private postsRepository: PostsRepository,
+    private sqlPostsQueryRepository: SQLPostsQueryRepository,
+    private sqlPostsRepository: SQLPostsRepository,
     private commandBus: CommandBus,
-    private commentsQueryRepository: CommentsQueryRepository,
+    private sqlCommentsQueryRepository: SQLCommentsQueryRepository,
   ) {}
 
   @Get()
@@ -52,30 +52,33 @@ export class PostsController {
   async findAll(
     @Query() query: GetPostsQueryParams,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
-  ): Promise<PaginatedViewDto<PostViewDto[]>> {
-    return this.postsQueryRepository.findAll(query, undefined, user?.id);
+  ): Promise<PaginatedViewDto<PostSQLViewDto[]>> {
+    return this.sqlPostsQueryRepository.findAll(query, undefined, user?.id);
   }
 
   @Get(':id')
   @UseGuards(JwtOptionalAuthGuard)
   async findById(
-    @Param('id', ObjectIdValidationPipe) id: string,
+    @Param('id', ParamsIdValidationPipe) id: string,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
-  ): Promise<PostViewDto> {
-    return this.postsQueryRepository.findByIdOrNotFoundException(id, user?.id);
+  ): Promise<PostSQLViewDto> {
+    return this.sqlPostsQueryRepository.findByIdOrNotFoundException(
+      id,
+      user?.id,
+    );
   }
 
   @Get(':id/comments')
   @UseGuards(JwtOptionalAuthGuard)
   async findCommentsById(
-    @Param('id') id: string,
+    @Param('id', ParamsIdValidationPipe) id: string,
     @Query() query: GetCommentsQueryParams,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
   ): Promise<PaginatedViewDto<CommentViewDto[]>> {
     const foundPost =
-      await this.postsRepository.findByIdOrNotFoundException(id);
-    return this.commentsQueryRepository.findByPostId(
-      foundPost._id.toString(),
+      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+    return this.sqlCommentsQueryRepository.findByPostId(
+      foundPost.id.toString(),
       query,
       user?.id,
     );
@@ -83,38 +86,42 @@ export class PostsController {
 
   @Post()
   @UseGuards(BasicAuthGuard)
-  async create(@Body() dto: CreatePostInputDto): Promise<PostViewDto> {
+  async create(@Body() dto: CreatePostInputDto): Promise<PostSQLViewDto> {
     const postId = await this.postsService.create(dto);
-    return this.postsQueryRepository.findByIdOrNotFoundException(postId);
+    return this.sqlPostsQueryRepository.findByIdOrNotFoundException(postId);
   }
 
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard)
   async createComment(
-    @Param('id', ObjectIdValidationPipe) id: string,
+    @Param('id', ParamsIdValidationPipe) id: string,
     @Body() dto: CreateCommentInputDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ): Promise<CommentViewDto> {
+    console.log('incoming data in Post to create Comment:', id, dto, user);
     const foundPost =
-      await this.postsRepository.findByIdOrNotFoundException(id);
+      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+    console.log('found post', foundPost);
     const commentId = await this.commandBus.execute(
-      new CreateCommentCommand(foundPost._id.toString(), dto, user.id),
+      new CreateCommentCommand(foundPost.id.toString(), dto, user.id),
     );
-    return this.commentsQueryRepository.findByIdOrNotFoundException(commentId);
+    return this.sqlCommentsQueryRepository.findByIdOrNotFoundException(
+      commentId,
+    );
   }
 
   @Put(':id/like-status')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   async addReaction(
-    @Param('id', ObjectIdValidationPipe) id: string,
+    @Param('id', ParamsIdValidationPipe) id: string,
     @Body() dto: ReactionInputDto,
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
     const foundPost =
-      await this.postsRepository.findByIdOrNotFoundException(id);
+      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
     return this.commandBus.execute(
-      new ReactOnEntityCommand(dto, foundPost._id.toString(), user.id, 'post'),
+      new ReactOnPostCommand(dto, foundPost.id.toString(), user.id),
     );
   }
 
@@ -122,7 +129,7 @@ export class PostsController {
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
-    @Param('id', ObjectIdValidationPipe) id: string,
+    @Param('id', ParamsIdValidationPipe) id: string,
     @Body() body: UpdatePostInputDto,
   ): Promise<void> {
     return this.postsService.update(id, body);
@@ -131,7 +138,7 @@ export class PostsController {
   @Delete(':id')
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ObjectIdValidationPipe) id: string): Promise<void> {
+  async delete(@Param('id', ParamsIdValidationPipe) id: string): Promise<void> {
     return this.postsService.delete(id);
   }
 }

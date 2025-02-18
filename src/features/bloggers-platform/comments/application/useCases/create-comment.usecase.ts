@@ -1,9 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateCommentDto } from '../../dto/comment.main-dto';
-import { UsersRepository } from '../../../../user-accounts/infrastructure/user.repository';
-import { InjectModel } from '@nestjs/mongoose';
-import { CommentModelType, Comment } from '../../domain/comment.entity';
-import { CommentsRepository } from '../../infrastructure/comment.repository';
+import { SQLCommentsRepository } from '../../infrastructure/comment-sql.repository';
+import { Comment } from '../../domain/comment-sql.entity';
+import { CreateCommentDomainDto } from '../../domain/dto/comment.domain-dto';
 
 export class CreateCommentCommand {
   constructor(
@@ -17,26 +16,15 @@ export class CreateCommentCommand {
 export class CreateCommentUseCase
   implements ICommandHandler<CreateCommentCommand>
 {
-  constructor(
-    @InjectModel(Comment.name) private CommentModel: CommentModelType,
-    private usersRepository: UsersRepository,
-    private commentsRepository: CommentsRepository,
-  ) {}
+  constructor(private sqlCommentsRepository: SQLCommentsRepository) {}
 
   async execute(command: CreateCommentCommand): Promise<string> {
-    console.log('in commandbus', command.dto);
-    const userLogin = await this.usersRepository.getLoginByUserId(
-      command.userId,
-    );
-    const domainDto = {
-      content: command.dto.content,
-      userId: command.userId,
-      userLogin: userLogin,
-      createdAt: new Date().toISOString(),
+    const domainDto: CreateCommentDomainDto = {
+      ...command.dto,
       postId: command.id,
+      userId: command.userId,
     };
-    const newComment = this.CommentModel.createInstance(domainDto);
-    await this.commentsRepository.save(newComment);
-    return newComment._id.toString();
+    const newComment = Comment.createNewInstance(domainDto);
+    return await this.sqlCommentsRepository.create(newComment);
   }
 }

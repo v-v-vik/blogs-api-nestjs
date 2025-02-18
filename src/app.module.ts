@@ -9,10 +9,9 @@ import { BloggersPlatformModule } from './features/bloggers-platform/bloggers-pl
 import { TestingModule } from './features/testing/testing.module';
 import { NotificationsModule } from './features/notifications/notifications.module';
 import { CqrsModule } from '@nestjs/cqrs';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
 import { CoreModule } from './core/core.module';
 import { CoreConfig } from './core/core.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -26,25 +25,36 @@ import { CoreConfig } from './core/core.config';
       },
       inject: [CoreConfig],
     }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'admin',
+      password: 'admin',
+      database: 'NestBlogsAPI',
+      autoLoadEntities: false,
+      synchronize: false,
+    }),
     CqrsModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 10000,
-        limit: 5,
-      },
-    ]),
+    // ThrottlerModule.forRoot([
+    //   {
+    //     ttl: 10000,
+    //     limit: 5,
+    //   },
+    // ]),
     UserAccountsModule,
     BloggersPlatformModule,
     NotificationsModule,
     CoreModule,
+    TestingModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: ThrottlerGuard,
+    // },
   ],
 })
 export class AppModule {

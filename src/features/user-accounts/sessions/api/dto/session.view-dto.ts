@@ -1,4 +1,4 @@
-import { SessionDocument } from '../../domain/session.entity';
+import { SessionSQLDto } from '../../domain/dto/session.sql-dto';
 
 export class SessionViewDto {
   ip: string;
@@ -6,7 +6,7 @@ export class SessionViewDto {
   lastActiveDate: string;
   deviceId: string;
 
-  constructor(session: SessionDocument) {
+  constructor(session: SessionSQLDto) {
     const dateCreated = new Date(
       Number(session.lastActiveDate) * 1000,
     ).toISOString();

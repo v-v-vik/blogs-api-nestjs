@@ -1,6 +1,5 @@
 import { AccountStatus } from '../domain/user.entity';
 import { Injectable } from '@nestjs/common';
-import { UsersRepository } from '../infrastructure/user.repository';
 import { BcryptService } from './bcrypt.service';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../../notifications/email.service';
@@ -9,68 +8,70 @@ import {
   BadRequestDomainException,
   UnauthorizedDomainException,
 } from '../../../core/exceptions/domain-exceptions';
+import { SQLUsersRepository } from '../infrastructure/user-sql.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersRepository: UsersRepository,
+    private sqlUsersRepository: SQLUsersRepository,
     private bcryptService: BcryptService,
     private emailService: EmailService,
     private jwtService: JwtService,
   ) {}
 
   async checkCredentials(loginOrEmail: string, password: string) {
-    const user = await this.usersRepository.findByLoginOrEmail(loginOrEmail);
+    const user = await this.sqlUsersRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) {
       throw UnauthorizedDomainException.create(
         `User ${loginOrEmail} not found`,
       );
     }
-    if (user.emailConfirmation.status === AccountStatus.NotConfirmed) {
+    if (user.status === AccountStatus.NotConfirmed) {
       throw UnauthorizedDomainException.create(
-        `User ${user.accountData.login} is not confirmed`,
+        `User ${user.login} is not confirmed`,
       );
     }
     const isPasswordCorrect = await this.bcryptService.checkPassword(
       password,
-      user.accountData.passwordHash,
+      user.passwordHash,
     );
     if (!isPasswordCorrect) {
       throw UnauthorizedDomainException.create('Wrong Password');
     }
-    return { id: user._id.toString() };
+    return { id: user.id.toString() };
   }
 
   async confirmRegistration(code: string) {
-    const foundUser = await this.usersRepository.findByCode(code);
+    const foundUser = await this.sqlUsersRepository.findByCode(code);
     if (!foundUser) {
       throw BadRequestDomainException.create(
         `User with ${code} not found`,
         'code',
       );
     }
-    if (foundUser.emailConfirmation.status === AccountStatus.Confirmed) {
+    if (foundUser.status === AccountStatus.Confirmed) {
       throw BadRequestDomainException.create(
         `${code} was already applied`,
         'code',
       );
     }
-    if (foundUser.emailConfirmation.expirationDate <= new Date()) {
+    if (foundUser.confirmCodeExpiryDate <= new Date()) {
       throw BadRequestDomainException.create(`${code} has expired`, 'code');
     }
     foundUser.flagAsConfirmed();
-    await this.usersRepository.save(foundUser);
+    await this.sqlUsersRepository.update(foundUser);
   }
 
   async resendConfirmationEmail(email: string) {
-    const foundUser = await this.usersRepository.findByLoginOrEmail(email);
+    const foundUser = await this.sqlUsersRepository.findByLoginOrEmail(email);
     if (!foundUser) {
+      //return null;
       throw BadRequestDomainException.create(
         `User with email ${email} not found`,
         'email',
       );
     }
-    if (foundUser.emailConfirmation.status === AccountStatus.Confirmed) {
+    if (foundUser.status === AccountStatus.Confirmed) {
       throw BadRequestDomainException.create(
         `${email} was already confirmed`,
         'email',
@@ -78,11 +79,11 @@ export class AuthService {
     }
     const newCode = randomUUID();
     foundUser.updateCode(newCode);
-    await this.usersRepository.save(foundUser);
+    await this.sqlUsersRepository.update(foundUser);
     this.emailService
       .sendRegistrationConfirmationEmail(
-        foundUser.accountData.email,
-        foundUser.emailConfirmation.confirmationCode,
+        foundUser.email,
+        foundUser.confirmationCode,
       )
       .catch((error) => console.log('error when trying to send email', error));
   }
@@ -105,7 +106,7 @@ export class AuthService {
     if (!codePayload) {
       throw BadRequestDomainException.create(`${code} is not valid or expired`);
     }
-    const foundUser = await this.usersRepository.findByLoginOrEmail(
+    const foundUser = await this.sqlUsersRepository.findByLoginOrEmail(
       codePayload.email,
     );
     if (!foundUser) {
@@ -116,6 +117,6 @@ export class AuthService {
     const newHashedPassword =
       await this.bcryptService.passwordHash(newPassword);
     foundUser.updatePassword(newHashedPassword);
-    await this.usersRepository.save(foundUser);
+    await this.sqlUsersRepository.update(foundUser);
   }
 }

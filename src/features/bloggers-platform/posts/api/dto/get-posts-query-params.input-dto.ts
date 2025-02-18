@@ -7,10 +7,16 @@ import { IsEnum } from 'class-validator';
 export enum PostsSortBy {
   CreatedAt = 'createdAt',
   Title = 'title',
+  BlogName = 'blogName',
+  BlogId = 'blogId',
+  Id = 'id',
+  ShortDescription = 'sortDescription',
 }
 
 export class GetPostsQueryParams extends BaseSortablePaginationParams<PostsSortBy> {
   @IsEnum(PostsSortBy)
   sortBy: PostsSortBy = PostsSortBy.CreatedAt;
+
+  @IsEnum(SortDirection)
   sortDirection: SortDirection = SortDirection.Desc;
 }

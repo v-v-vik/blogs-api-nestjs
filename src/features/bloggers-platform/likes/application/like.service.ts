@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { LikesInfo } from '../domain/likes-info.schema';
 import { LikeStatus } from '../domain/like.entity';
-import { CommentDocument } from '../../comments/domain/comment.entity';
-import { PostDocument } from '../../posts/domain/post.entity';
+import { Post } from '../../posts/domain/post-sql.entity';
+import { Comment } from '../../comments/domain/comment-sql.entity';
 
 Injectable();
 export class LikeService {
@@ -11,7 +11,7 @@ export class LikeService {
   async changeLikeCount(
     currReaction: LikeStatus,
     newReaction: LikeStatus,
-    entity: CommentDocument | PostDocument,
+    entity: Comment | Post,
     entityType: 'comment' | 'post',
   ): Promise<LikesInfo> {
     const likeInfoProperty =
