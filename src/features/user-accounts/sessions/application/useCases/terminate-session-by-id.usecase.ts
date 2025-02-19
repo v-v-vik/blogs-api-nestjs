@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ForbiddenDomainException } from '../../../../../core/exceptions/domain-exceptions';
-import { SQLSessionsRepository } from '../../infrastructure/session-sql.repository';
+import { SessionsRepository } from '../../infrastructure/session.repository';
 
 export class TerminateSessionCommand {
   constructor(
@@ -13,11 +13,11 @@ export class TerminateSessionCommand {
 export class TerminateSessionUseCase
   implements ICommandHandler<TerminateSessionCommand>
 {
-  constructor(private sqlSessionsRepository: SQLSessionsRepository) {}
+  constructor(private sessionsRepository: SessionsRepository) {}
 
   async execute(command: TerminateSessionCommand): Promise<void> {
     const foundSession =
-      await this.sqlSessionsRepository.findByDeviceIdOrNotFoundException(
+      await this.sessionsRepository.findByDeviceIdOrNotFoundException(
         command.id,
       );
     if (foundSession.userId.toString() !== command.userId) {
@@ -27,6 +27,6 @@ export class TerminateSessionUseCase
       );
     }
     foundSession.flagAsDeleted();
-    await this.sqlSessionsRepository.update(foundSession);
+    await this.sessionsRepository.save(foundSession);
   }
 }

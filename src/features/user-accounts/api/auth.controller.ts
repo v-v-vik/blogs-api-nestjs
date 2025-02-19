@@ -32,7 +32,7 @@ import { ExtractPayloadFromRequest } from '../guards/decorators/param/rt-payload
 import { RefreshTokenPayload } from '../dto/tokens/tokens-payload.dto';
 import { LogoutUserCommand } from '../application/useCases/logout-user.usecase';
 import { SkipThrottle } from '@nestjs/throttler';
-import { SQLUsersQueryRepository } from '../infrastructure/user-sql.query-repository';
+import { UsersQueryRepository } from '../infrastructure/user.query-repository';
 import { CreateUserInputDto } from './dto/user.input-dto';
 import { RegisterUserCommand } from '../application/useCases/register-user.usecase';
 
@@ -40,7 +40,7 @@ import { RegisterUserCommand } from '../application/useCases/register-user.useca
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private sqlUsersQueryRepository: SQLUsersQueryRepository,
+    private sqlUsersQueryRepository: UsersQueryRepository,
     private commandBus: CommandBus,
   ) {}
 
@@ -93,6 +93,7 @@ export class AuthController {
 
   @Post('new-password')
   async changePassword(@Body() dto: NewPasswordRecoveryInputDto) {
+    console.log('at controller:', dto);
     return this.authService.passwordUpdate(dto.newPassword, dto.recoveryCode);
   }
 

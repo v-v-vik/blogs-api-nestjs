@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { SQLSessionsRepository } from '../../sessions/infrastructure/session-sql.repository';
+import { SessionsRepository } from '../../sessions/infrastructure/session.repository';
 
 export class LogoutUserCommand {
   constructor(
@@ -11,15 +11,15 @@ export class LogoutUserCommand {
 
 @CommandHandler(LogoutUserCommand)
 export class LogoutUserUseCase implements ICommandHandler<LogoutUserCommand> {
-  constructor(private sqlSessionsRepository: SQLSessionsRepository) {}
+  constructor(private sessionsRepository: SessionsRepository) {}
 
   async execute(command: LogoutUserCommand): Promise<void> {
     const foundSession =
-      await this.sqlSessionsRepository.findByDeviceIdOrNotFoundException(
+      await this.sessionsRepository.findByDeviceIdOrNotFoundException(
         command.deviceId,
       );
     foundSession.flagAsDeleted();
-    await this.sqlSessionsRepository.update(foundSession);
+    await this.sessionsRepository.save(foundSession);
 
     command.res.clearCookie('refreshToken');
   }

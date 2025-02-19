@@ -28,7 +28,7 @@ export class BlogsController {
   constructor(
     private sqlBlogsQueryRepository: SQLBlogsQueryRepository,
     private postsQueryRepository: SQLPostsQueryRepository,
-    private blogsService: BlogsService
+    private blogsService: BlogsService,
   ) {}
 
   @Get()

@@ -12,11 +12,13 @@ export class TestingController {
   @Delete('all-data')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAll() {
-    await this.dataSource.query('DELETE FROM public."comments"');
-    await this.dataSource.query('DELETE FROM public."likes"');
-    await this.dataSource.query('DELETE FROM public."users"');
-    await this.dataSource.query('DELETE FROM public."blogs"');
-    await this.dataSource.query('DELETE FROM public."posts"');
-    await this.dataSource.query('DELETE FROM public."sessions"');
+    await this.dataSource.dropDatabase();
+    await this.dataSource.synchronize();
+    // await this.dataSource.query('DELETE FROM public."comments"');
+    // await this.dataSource.query('DELETE FROM public."likes"');
+    // await this.dataSource.query('DELETE FROM public."users"');
+    // await this.dataSource.query('DELETE FROM public."blogs"');
+    // await this.dataSource.query('DELETE FROM public."posts"');
+    // await this.dataSource.query('DELETE FROM public."sessions"');
   }
 }

@@ -1,20 +1,24 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-
-import { RefreshTokenPayload } from '../../../dto/tokens/tokens-payload.dto';
-import { SQLSessionsRepository } from '../../infrastructure/session-sql.repository';
+import { SessionsRepository } from '../../infrastructure/session.repository';
+import { UpdateResult } from 'typeorm';
 
 export class TerminateAllSessionsCommand {
-  constructor(public payload: RefreshTokenPayload) {}
+  constructor(
+    public deviceId: string,
+    public userId: string,
+  ) {}
 }
 
 @CommandHandler(TerminateAllSessionsCommand)
 export class TerminateAllSessionsUseCase
   implements ICommandHandler<TerminateAllSessionsCommand>
 {
-  constructor(private sqlSessionsRepository: SQLSessionsRepository) {}
+  constructor(private sessionsRepository: SessionsRepository) {}
 
-  async execute(command: TerminateAllSessionsCommand): Promise<void> {
-    console.log('In the bus');
-    return this.sqlSessionsRepository.terminateAllSessions(command.payload);
+  async execute(command: TerminateAllSessionsCommand): Promise<UpdateResult> {
+    return this.sessionsRepository.terminateAllSessions(
+      command.deviceId,
+      command.userId,
+    );
   }
 }

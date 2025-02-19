@@ -2,23 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dto/user.main-dto';
 import { BcryptService } from './bcrypt.service';
 import { BadRequestDomainException } from '../../../core/exceptions/domain-exceptions';
-import { SQLUsersRepository } from '../infrastructure/user-sql.repository';
-import { User } from '../domain/user-sql.entity';
+import { UsersRepository } from '../infrastructure/user.repository';
+import { User } from '../domain/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     private bcryptService: BcryptService,
-    private sqlUsersRepository: SQLUsersRepository,
+    private usersRepository: UsersRepository,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
     const { login, password, email } = dto;
-    const user = await this.sqlUsersRepository.findByLoginAndEmail(
-      login,
-      email,
-    );
-    console.log('checking login and email if exist', user);
+    const user = await this.usersRepository.findByLoginAndEmail(login, email);
     const errors: any = [];
     if (user?.login === dto.login) {
       errors.push({ field: 'login', message: 'Login already exists' });
@@ -38,8 +34,9 @@ export class UsersService {
   }
 
   async delete(id: string) {
-    const user = await this.sqlUsersRepository.findByIdOrNotFoundException(id);
+    const user = await this.usersRepository.findByIdOrNotFoundException(id);
     user.flagAsDeleted();
-    await this.sqlUsersRepository.update(user);
+    console.log(user);
+    await this.usersRepository.save(user);
   }
 }

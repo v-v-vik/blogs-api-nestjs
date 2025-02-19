@@ -12,6 +12,8 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { CoreModule } from './core/core.module';
 import { CoreConfig } from './core/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -32,16 +34,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       username: 'admin',
       password: 'admin',
       database: 'NestBlogsAPI',
-      autoLoadEntities: false,
-      synchronize: false,
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     CqrsModule.forRoot(),
-    // ThrottlerModule.forRoot([
-    //   {
-    //     ttl: 10000,
-    //     limit: 5,
-    //   },
-    // ]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 10000,
+        limit: 5,
+      },
+    ]),
     UserAccountsModule,
     BloggersPlatformModule,
     NotificationsModule,
@@ -51,10 +53,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   controllers: [AppController],
   providers: [
     AppService,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: ThrottlerGuard,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {

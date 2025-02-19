@@ -2,7 +2,7 @@ import { CreateUserInputDto } from '../../api/dto/user.input-dto';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UsersService } from '../users.service';
 import { EmailService } from '../../../notifications/email.service';
-import { SQLUsersRepository } from '../../infrastructure/user-sql.repository';
+import { UsersRepository } from '../../infrastructure/user.repository';
 
 export class RegisterUserCommand {
   constructor(public dto: CreateUserInputDto) {}
@@ -15,12 +15,12 @@ export class RegisterUserUseCase
   constructor(
     private usersService: UsersService,
     private emailService: EmailService,
-    private sqlUsersRepository: SQLUsersRepository,
+    private usersRepository: UsersRepository,
   ) {}
 
   async execute({ dto }: RegisterUserCommand): Promise<void> {
     const newUser = await this.usersService.create(dto);
-    await this.sqlUsersRepository.create(newUser);
+    await this.usersRepository.save(newUser);
     this.emailService
       .sendRegistrationConfirmationEmail(
         newUser.email,

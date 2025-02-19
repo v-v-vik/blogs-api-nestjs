@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateUserInputDto } from '../../../api/dto/user.input-dto';
 import { UsersService } from '../../users.service';
-import { SQLUsersRepository } from '../../../infrastructure/user-sql.repository';
+import { UsersRepository } from '../../../infrastructure/user.repository';
 
 export class CreateUserAdminCommand {
   constructor(public dto: CreateUserInputDto) {}
@@ -13,12 +13,12 @@ export class CreateUserAdminUseCase
 {
   constructor(
     private usersService: UsersService,
-    private sqlUsersRepository: SQLUsersRepository,
+    private usersRepository: UsersRepository,
   ) {}
 
   async execute({ dto }: CreateUserAdminCommand): Promise<string> {
     const newUser = await this.usersService.create(dto);
     newUser.flagAsConfirmed();
-    return await this.sqlUsersRepository.create(newUser);
+    return await this.usersRepository.save(newUser);
   }
 }

@@ -14,14 +14,14 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { CommandBus } from '@nestjs/cqrs';
 import { TerminateSessionCommand } from '../application/useCases/terminate-session-by-id.usecase';
 import { TerminateAllSessionsCommand } from '../application/useCases/terminate-all-sessions.usecase';
-import { SQLSessionsQueryRepository } from '../infrastructure/session-sql.query-repository';
+import { SessionsQueryRepository } from '../infrastructure/session.query-repository';
 import { UUIDValidationPipe } from '../../../../core/pipes/UUID-validation.pipe';
 
 @SkipThrottle()
 @Controller('security/devices')
 export class SessionsController {
   constructor(
-    private sqlSessionsQueryRepository: SQLSessionsQueryRepository,
+    private sessionsQueryRepository: SessionsQueryRepository,
     private commandBus: CommandBus,
   ) {}
 
@@ -31,7 +31,7 @@ export class SessionsController {
   async showActiveSessions(
     @ExtractPayloadFromRequest() payload: RefreshTokenPayload,
   ) {
-    return this.sqlSessionsQueryRepository.findAllActiveSessions(payload.id);
+    return this.sessionsQueryRepository.findAllActiveSessions(payload.id);
   }
 
   @Delete()
@@ -40,7 +40,9 @@ export class SessionsController {
   async terminateAllSessions(
     @ExtractPayloadFromRequest() payload: RefreshTokenPayload,
   ) {
-    return this.commandBus.execute(new TerminateAllSessionsCommand(payload));
+    return this.commandBus.execute(
+      new TerminateAllSessionsCommand(payload.deviceId, payload.id),
+    );
   }
 
   @Delete(':id')

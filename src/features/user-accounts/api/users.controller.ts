@@ -13,11 +13,12 @@ import {
 import { UsersService } from '../application/users.service';
 import { CreateUserInputDto } from './dto/user.input-dto';
 import { SkipThrottle } from '@nestjs/throttler';
-import { SQLUsersQueryRepository } from '../infrastructure/user-sql.query-repository';
+import { UsersQueryRepository } from '../infrastructure/user.query-repository';
 import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
 import { GetUsersQueryParams } from './dto/get-users-query-params.input-dto';
 import { CommandBus } from '@nestjs/cqrs';
 import { CreateUserAdminCommand } from '../application/useCases/admin/create-user-admin.usecase';
+import { ParamsIdValidationPipe } from '../../../core/pipes/id-param-validation.pipe';
 
 @UseGuards(BasicAuthGuard)
 @SkipThrottle()
@@ -25,11 +26,11 @@ import { CreateUserAdminCommand } from '../application/useCases/admin/create-use
 export class UsersController {
   constructor(
     private usersService: UsersService,
-    private sqlUsersQueryRepository: SQLUsersQueryRepository,
+    private sqlUsersQueryRepository: UsersQueryRepository,
     private commandBus: CommandBus,
   ) {}
   @Get(':id')
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id', ParamsIdValidationPipe) id: string) {
     return this.sqlUsersQueryRepository.findByIdOrNotFoundFail(id);
   }
   @Get()
@@ -45,7 +46,7 @@ export class UsersController {
   }
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id', ParamsIdValidationPipe) id: string): Promise<void> {
     return await this.usersService.delete(id);
   }
 }

@@ -7,7 +7,7 @@ import {
 } from '../../constants/auth-tokens.inject-constants';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenPayload } from '../../dto/tokens/tokens-payload.dto';
-import { SQLSessionsRepository } from '../../sessions/infrastructure/session-sql.repository';
+import { SessionsRepository } from '../../sessions/infrastructure/session.repository';
 
 export class RefreshTokenCommand {
   constructor(
@@ -21,7 +21,7 @@ export class RefreshTokenUseCase
   implements ICommandHandler<RefreshTokenCommand>
 {
   constructor(
-    private sqlSessionsRepository: SQLSessionsRepository,
+    private sessionsRepository: SessionsRepository,
     @Inject(ACCESS_TOKEN_STRATEGY_INJECT_TOKEN)
     private accessTokenContext: JwtService,
     @Inject(REFRESH_TOKEN_STRATEGY_INJECT_TOKEN)
@@ -44,11 +44,9 @@ export class RefreshTokenUseCase
       iat: number;
     };
     const foundSession =
-      await this.sqlSessionsRepository.findByDeviceIdOrNotFoundException(
-        deviceId,
-      );
+      await this.sessionsRepository.findByDeviceIdOrNotFoundException(deviceId);
     foundSession.update(newTokenData.iat.toString());
-    await this.sqlSessionsRepository.update(foundSession);
+    await this.sessionsRepository.save(foundSession);
 
     command.res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,

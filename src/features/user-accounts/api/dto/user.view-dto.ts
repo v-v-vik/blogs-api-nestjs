@@ -1,4 +1,4 @@
-import { UserSQLDto } from '../../domain/dto/user.sql-dto';
+import { User } from '../../domain/user.entity';
 
 export class UserViewDto {
   id: string;
@@ -6,7 +6,7 @@ export class UserViewDto {
   email: string;
   createdAt: string;
 
-  constructor(user: UserSQLDto) {
+  constructor(user: User) {
     this.id = user.id.toString();
     this.login = user.login;
     this.email = user.email;

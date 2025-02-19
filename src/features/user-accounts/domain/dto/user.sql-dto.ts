@@ -1,3 +1,5 @@
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+
 export class UserSQLDto {
   id: number;
   login: string;
@@ -7,5 +9,5 @@ export class UserSQLDto {
   confirmationCode: string;
   confirmCodeExpiryDate: Date;
   status: number;
-  deletionStatus: string;
+  deletionStatus: DeletionStatus;
 }

@@ -1,4 +1,3 @@
-import { AccountStatus } from '../domain/user.entity';
 import { Injectable } from '@nestjs/common';
 import { BcryptService } from './bcrypt.service';
 import { JwtService } from '@nestjs/jwt';
@@ -8,19 +7,20 @@ import {
   BadRequestDomainException,
   UnauthorizedDomainException,
 } from '../../../core/exceptions/domain-exceptions';
-import { SQLUsersRepository } from '../infrastructure/user-sql.repository';
+import { UsersRepository } from '../infrastructure/user.repository';
+import { AccountStatus } from '../domain/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private sqlUsersRepository: SQLUsersRepository,
+    private usersRepository: UsersRepository,
     private bcryptService: BcryptService,
     private emailService: EmailService,
     private jwtService: JwtService,
   ) {}
 
   async checkCredentials(loginOrEmail: string, password: string) {
-    const user = await this.sqlUsersRepository.findByLoginOrEmail(loginOrEmail);
+    const user = await this.usersRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) {
       throw UnauthorizedDomainException.create(
         `User ${loginOrEmail} not found`,
@@ -42,7 +42,7 @@ export class AuthService {
   }
 
   async confirmRegistration(code: string) {
-    const foundUser = await this.sqlUsersRepository.findByCode(code);
+    const foundUser = await this.usersRepository.findByCode(code);
     if (!foundUser) {
       throw BadRequestDomainException.create(
         `User with ${code} not found`,
@@ -59,11 +59,11 @@ export class AuthService {
       throw BadRequestDomainException.create(`${code} has expired`, 'code');
     }
     foundUser.flagAsConfirmed();
-    await this.sqlUsersRepository.update(foundUser);
+    await this.usersRepository.save(foundUser);
   }
 
   async resendConfirmationEmail(email: string) {
-    const foundUser = await this.sqlUsersRepository.findByLoginOrEmail(email);
+    const foundUser = await this.usersRepository.findByLoginOrEmail(email);
     if (!foundUser) {
       //return null;
       throw BadRequestDomainException.create(
@@ -79,7 +79,7 @@ export class AuthService {
     }
     const newCode = randomUUID();
     foundUser.updateCode(newCode);
-    await this.sqlUsersRepository.update(foundUser);
+    await this.usersRepository.save(foundUser);
     this.emailService
       .sendRegistrationConfirmationEmail(
         foundUser.email,
@@ -96,17 +96,20 @@ export class AuthService {
         expiresIn: '5m',
       },
     );
+    console.log(newCode);
     this.emailService
       .sendPasswordRecoveryEmail(email, newCode)
       .catch((error) => console.log('error when trying to send email', error));
   }
 
   async passwordUpdate(newPassword: string, code: string) {
-    const codePayload = await this.jwtService.verify(code);
+    const codePayload = await this.jwtService.verify(code, {
+      secret: 'password-code-secret',
+    });
     if (!codePayload) {
       throw BadRequestDomainException.create(`${code} is not valid or expired`);
     }
-    const foundUser = await this.sqlUsersRepository.findByLoginOrEmail(
+    const foundUser = await this.usersRepository.findByLoginOrEmail(
       codePayload.email,
     );
     if (!foundUser) {
@@ -117,6 +120,6 @@ export class AuthService {
     const newHashedPassword =
       await this.bcryptService.passwordHash(newPassword);
     foundUser.updatePassword(newHashedPassword);
-    await this.sqlUsersRepository.update(foundUser);
+    await this.usersRepository.save(foundUser);
   }
 }
