@@ -28,8 +28,8 @@ import { ExtractUserFromRequestIfExists } from '../../../user-accounts/guards/de
 import { BasicAuthGuard } from '../../../user-accounts/guards/basic/basic-auth.guard';
 import { JwtOptionalAuthGuard } from '../../../user-accounts/guards/bearer/optional-jwt-auth.guard';
 import { SkipThrottle } from '@nestjs/throttler';
-import { SQLPostsQueryRepository } from '../infrastructure/post-sql.query-repository';
-import { SQLPostsRepository } from '../infrastructure/post-sql.repository';
+import { PostsQueryRepository } from '../infrastructure/post.query-repository';
+import { PostsRepository } from '../infrastructure/post.repository';
 import { ParamsIdValidationPipe } from '../../../../core/pipes/id-param-validation.pipe';
 import { SQLCommentsQueryRepository } from '../../comments/infrastructure/comment-sql.query-repository';
 import { ReactionInputDto } from '../../likes/api/dto/like.input-dto';
@@ -40,8 +40,8 @@ import { ReactOnPostCommand } from '../../likes/application/useCases/react-on-po
 export class PostsController {
   constructor(
     private postsService: PostsService,
-    private sqlPostsQueryRepository: SQLPostsQueryRepository,
-    private sqlPostsRepository: SQLPostsRepository,
+    private postsQueryRepository: PostsQueryRepository,
+    private postsRepository: PostsRepository,
     private commandBus: CommandBus,
     private sqlCommentsQueryRepository: SQLCommentsQueryRepository,
   ) {}
@@ -53,7 +53,7 @@ export class PostsController {
     @Query() query: GetPostsQueryParams,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
   ): Promise<PaginatedViewDto<PostSQLViewDto[]>> {
-    return this.sqlPostsQueryRepository.findAll(query, undefined, user?.id);
+    return this.postsQueryRepository.findAll(query, undefined, user?.id);
   }
 
   @Get(':id')
@@ -61,11 +61,13 @@ export class PostsController {
   async findById(
     @Param('id', ParamsIdValidationPipe) id: string,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
-  ): Promise<PostSQLViewDto> {
-    return this.sqlPostsQueryRepository.findByIdOrNotFoundException(
-      id,
-      user?.id,
-    );
+  ) {
+    return this.postsRepository.findByIdOrNotFoundException(id);
+
+    // return this.postsQueryRepository.findByIdOrNotFoundException(
+    //   id,
+    //   user?.id,
+    // );
   }
 
   @Get(':id/comments')
@@ -76,7 +78,7 @@ export class PostsController {
     @ExtractUserFromRequestIfExists() user: UserContextDto,
   ): Promise<PaginatedViewDto<CommentViewDto[]>> {
     const foundPost =
-      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+      await this.postsRepository.findByIdOrNotFoundException(id);
     return this.sqlCommentsQueryRepository.findByPostId(
       foundPost.id.toString(),
       query,
@@ -88,7 +90,7 @@ export class PostsController {
   @UseGuards(BasicAuthGuard)
   async create(@Body() dto: CreatePostInputDto): Promise<PostSQLViewDto> {
     const postId = await this.postsService.create(dto);
-    return this.sqlPostsQueryRepository.findByIdOrNotFoundException(postId);
+    return this.postsQueryRepository.findByIdOrNotFoundException(postId);
   }
 
   @Post(':id/comments')
@@ -100,7 +102,7 @@ export class PostsController {
   ): Promise<CommentViewDto> {
     console.log('incoming data in Post to create Comment:', id, dto, user);
     const foundPost =
-      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+      await this.postsRepository.findByIdOrNotFoundException(id);
     console.log('found post', foundPost);
     const commentId = await this.commandBus.execute(
       new CreateCommentCommand(foundPost.id.toString(), dto, user.id),
@@ -119,7 +121,7 @@ export class PostsController {
     @ExtractUserFromRequest() user: UserContextDto,
   ) {
     const foundPost =
-      await this.sqlPostsRepository.findByIdOrNotFoundException(id);
+      await this.postsRepository.findByIdOrNotFoundException(id);
     return this.commandBus.execute(
       new ReactOnPostCommand(dto, foundPost.id.toString(), user.id),
     );

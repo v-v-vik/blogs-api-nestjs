@@ -12,22 +12,21 @@ import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { BlogViewDto } from './dto/blog.view-dto';
 import { GetBlogsQueryParams } from './dto/get-blogs-query-params.input-dto';
 import { GetPostsQueryParams } from '../../posts/api/dto/get-posts-query-params.input-dto';
-import { PostsService } from '../../posts/application/posts.service';
 import { JwtOptionalAuthGuard } from '../../../user-accounts/guards/bearer/optional-jwt-auth.guard';
 import { ExtractUserFromRequestIfExists } from '../../../user-accounts/guards/decorators/param/user-from-req-if-exists.decorator';
 import { UserContextDto } from '../../../user-accounts/guards/dto/user-context.dto';
 import { SkipThrottle } from '@nestjs/throttler';
-import { SQLBlogsQueryRepository } from '../infrastructure/blog-sql.query-repository';
+import { BlogsQueryRepository } from '../infrastructure/blog.query-repository';
 import { ParamsIdValidationPipe } from '../../../../core/pipes/id-param-validation.pipe';
-import { SQLPostsQueryRepository } from '../../posts/infrastructure/post-sql.query-repository';
+import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repository';
 import { PostSQLViewDto } from '../../posts/api/dto/post-sql.view-dto';
 
 @SkipThrottle()
 @Controller('blogs')
 export class BlogsController {
   constructor(
-    private sqlBlogsQueryRepository: SQLBlogsQueryRepository,
-    private postsQueryRepository: SQLPostsQueryRepository,
+    private blogsQueryRepository: BlogsQueryRepository,
+    private postsQueryRepository: PostsQueryRepository,
     private blogsService: BlogsService,
   ) {}
 
@@ -35,7 +34,7 @@ export class BlogsController {
   async findAll(
     @Query() query: GetBlogsQueryParams,
   ): Promise<PaginatedViewDto<BlogViewDto[]>> {
-    return this.sqlBlogsQueryRepository.findAll(query);
+    return this.blogsQueryRepository.findAll(query);
   }
 
   @Get(':id')
@@ -43,9 +42,7 @@ export class BlogsController {
     @Param('id', ParamsIdValidationPipe) id: string,
   ): Promise<BlogViewDto> {
     const foundBlogId = await this.blogsService.findById(id);
-    return this.sqlBlogsQueryRepository.findByIdOrNotFoundException(
-      foundBlogId,
-    );
+    return this.blogsQueryRepository.findByIdOrNotFoundException(foundBlogId);
   }
 
   @Get(':id/posts')

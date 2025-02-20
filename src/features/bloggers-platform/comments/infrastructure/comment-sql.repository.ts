@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { Comment } from '../domain/comment-sql.entity';
+import { Comment } from '../domain/comment.entity';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()

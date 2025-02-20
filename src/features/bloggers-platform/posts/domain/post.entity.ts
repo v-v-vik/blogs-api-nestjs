@@ -1,85 +1,125 @@
-// import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-// import {
-//   LikesInfo,
-//   LikesInfoSchema,
-// } from '../../likes/domain/likes-info.schema';
-// import { HydratedDocument, Model } from 'mongoose';
-// import {
-//   CreatePostDomainDto,
-//   UpdatePostDomainDto,
-// } from './dto/post.domain-dto';
-// import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
-// import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-//
-// @Schema({ timestamps: true })
-// export class Post {
-//   @Prop({ type: String, require: true })
-//   title: string;
-//
-//   @Prop({ type: String, require: true })
-//   shortDescription: string;
-//
-//   @Prop({ type: String, require: true })
-//   content: string;
-//
-//   @Prop({ type: String, require: true })
-//   blogId: string;
-//
-//   @Prop({ type: String, require: true })
-//   blogName: string;
-//
-//   @Prop({ type: String, require: true })
-//   createdAt: string;
-//
-//   @Prop({ type: LikesInfoSchema, require: true })
-//   extendedLikesInfo: LikesInfo;
-//
-//   @Prop({ type: String, default: DeletionStatus.NotDeleted })
-//   deletionStatus: DeletionStatus;
-//
-//   static createInstance(dto: CreatePostDomainDto): PostDocument {
-//     const post = new this();
-//     post.title = dto.title;
-//     post.shortDescription = dto.shortDescription;
-//     post.content = dto.content;
-//     post.blogId = dto.blogId;
-//     post.blogName = dto.blogName;
-//     post.createdAt = new Date().toISOString();
-//     post.extendedLikesInfo = {
-//       likesCount: 0,
-//       dislikesCount: 0,
-//     };
-//
-//     return post as PostDocument;
-//   }
-//
-//   flagAsDeleted() {
-//     if (this.deletionStatus !== DeletionStatus.NotDeleted) {
-//       throw NotFoundDomainException.create('Entity already deleted');
-//     }
-//     this.deletionStatus = DeletionStatus.PermanentDeleted;
-//   }
-//
-//   update(dto: UpdatePostDomainDto) {
-//     this.title = dto.title;
-//     this.shortDescription = dto.shortDescription;
-//     this.content = dto.content;
-//     this.blogId = dto.blogId;
-//     this.blogName = dto.blogName;
-//   }
-//
-//   updateLikeCount(dto: LikesInfo) {
-//     this.extendedLikesInfo = {
-//       likesCount: dto.likesCount,
-//       dislikesCount: dto.dislikesCount,
-//     };
-//   }
-// }
-//
-// export const PostSchema = SchemaFactory.createForClass(Post);
-//
-// PostSchema.loadClass(Post);
-//
-// export type PostDocument = HydratedDocument<Post>;
-//
-// export type PostModelType = Model<PostDocument> & typeof Post;
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import {
+  CreatePostDomainDto,
+  UpdatePostDomainDto,
+} from './dto/post.domain-dto';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import {
+  AfterLoad,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Blog } from '../../blogs/domain/blog.entity';
+import { LikesInfo } from '../../likes/dto/like.main-dto';
+
+@Entity('posts')
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  title: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  shortDescription: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  content: string;
+
+  @ManyToOne(() => Blog, { nullable: false, onDelete: 'CASCADE' })
+  blog: Blog;
+
+  @Column({ type: 'int' })
+  blogId: number;
+
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: false,
+  })
+  createdAt: Date;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  deletionStatus: string;
+
+  @Column({ type: 'int', default: 0 })
+  likesCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  dislikesCount: number;
+
+  extendedLikesInfo: {
+    likesCount: number;
+    dislikesCount: number;
+  };
+
+  @AfterLoad()
+  setExtendedLikesInfo() {
+    this.extendedLikesInfo = {
+      likesCount: this.likesCount,
+      dislikesCount: this.dislikesCount,
+    };
+  }
+
+  static createNewInstance(dto: CreatePostDomainDto): Post {
+    const post = new this();
+    post.title = dto.title;
+    post.shortDescription = dto.shortDescription;
+    post.content = dto.content;
+    post.blogId = Number(dto.blogId);
+
+    return post as Post;
+  }
+
+  // static createFromExistingDataInstance(dbPost: PostSQLDto): Post {
+  //   const post = new this();
+  //   post.id = dbPost.id.toString();
+  //   post.title = dbPost.title;
+  //   post.shortDescription = dbPost.shortDescription;
+  //   post.content = dbPost.content;
+  //   post.blogId = dbPost.blogId.toString();
+  //   post.blogName = dbPost.blogName;
+  //   post.createdAt = dbPost.createdAt;
+  //   post.extendedLikesInfo = {
+  //     likesCount: dbPost.likesCount,
+  //     dislikesCount: dbPost.dislikesCount,
+  //   };
+  //   post.deletionStatus = dbPost.deletionStatus;
+  //
+  //   return post as Post;
+  // }
+
+  flagAsDeleted() {
+    if (this.deletionStatus !== DeletionStatus.NotDeleted) {
+      throw NotFoundDomainException.create('Entity already deleted');
+    }
+    this.deletionStatus = DeletionStatus.PermanentDeleted;
+  }
+
+  update(dto: UpdatePostDomainDto) {
+    this.title = dto.title;
+    this.shortDescription = dto.shortDescription;
+    this.content = dto.content;
+    this.blogId = Number(dto.blogId);
+  }
+
+  updateLikeCount(dto: LikesInfo) {
+    this.extendedLikesInfo = {
+      likesCount: dto.likesCount,
+      dislikesCount: dto.dislikesCount,
+    };
+  }
+}

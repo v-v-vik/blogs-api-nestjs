@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { SQLLikesRepository } from '../../infrastructure/like-sql.repository';
 import { LikeService } from '../like.service';
 import { LikeStatus } from '../../domain/like.entity';
-import { Like, LikeEntityType } from '../../domain/like-sql.entity';
+import { Like, LikeEntityType } from '../../domain/like.entity';
 import { ReactionDomainDto } from '../../domain/dto/like.domain-dto';
 import { SQLCommentsRepository } from '../../../comments/infrastructure/comment-sql.repository';
 

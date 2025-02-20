@@ -12,8 +12,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { SQLBlogsQueryRepository } from '../infrastructure/blog-sql.query-repository';
-import { SQLPostsQueryRepository } from '../../posts/infrastructure/post-sql.query-repository';
+import { BlogsQueryRepository } from '../infrastructure/blog.query-repository';
+import { PostsQueryRepository } from '../../posts/infrastructure/post.query-repository';
 import { BlogsService } from '../application/blogs.service';
 import { PostsService } from '../../posts/application/posts.service';
 import { BasicAuthGuard } from '../../../user-accounts/guards/basic/basic-auth.guard';
@@ -38,8 +38,8 @@ import { PostSQLViewDto } from '../../posts/api/dto/post-sql.view-dto';
 @Controller('sa/blogs')
 export class SuperAdminBlogsController {
   constructor(
-    private sqlBlogsQueryRepository: SQLBlogsQueryRepository,
-    private postsQueryRepository: SQLPostsQueryRepository,
+    private blogsQueryRepository: BlogsQueryRepository,
+    private postsQueryRepository: PostsQueryRepository,
     private blogsService: BlogsService,
     private postsService: PostsService,
   ) {}
@@ -48,13 +48,13 @@ export class SuperAdminBlogsController {
   async findAll(
     @Query() query: GetBlogsQueryParams,
   ): Promise<PaginatedViewDto<BlogViewDto[]>> {
-    return this.sqlBlogsQueryRepository.findAll(query);
+    return this.blogsQueryRepository.findAll(query);
   }
 
   @Post()
   async create(@Body() body: CreateBlogInputDto): Promise<BlogViewDto> {
     const blogId = await this.blogsService.create(body);
-    return this.sqlBlogsQueryRepository.findByIdOrNotFoundException(blogId);
+    return this.blogsQueryRepository.findByIdOrNotFoundException(blogId);
   }
 
   @Get(':id/posts')

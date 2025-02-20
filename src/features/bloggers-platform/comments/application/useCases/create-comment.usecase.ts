@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateCommentDto } from '../../dto/comment.main-dto';
 import { SQLCommentsRepository } from '../../infrastructure/comment-sql.repository';
-import { Comment } from '../../domain/comment-sql.entity';
+import { Comment } from '../../domain/comment.entity';
 import { CreateCommentDomainDto } from '../../domain/dto/comment.domain-dto';
 
 export class CreateCommentCommand {

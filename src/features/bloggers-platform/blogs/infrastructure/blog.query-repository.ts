@@ -1,50 +1,67 @@
-// import { Injectable } from '@nestjs/common';
-// import { InjectModel } from '@nestjs/mongoose';
-// import { Blog, BlogDocument, BlogModelType } from '../domain/blog.entity';
-// import { BlogViewDto } from '../api/dto/blog.view-dto';
-// import { GetBlogsQueryParams } from '../api/dto/get-blogs-query-params.input-dto';
-// import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
-// import { FilterQuery } from 'mongoose';
-// import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
-// import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-//
-// @Injectable()
-// export class BlogsQueryRepository {
-//   constructor(@InjectModel(Blog.name) private BlogModel: BlogModelType) {}
-//
-//   async findByIdOrNotFoundException(id: string): Promise<BlogViewDto> {
-//     const blog = await this.BlogModel.findOne({
-//       _id: id,
-//       deletionStatus: DeletionStatus.NotDeleted,
-//     }).exec();
-//     if (!blog) {
-//       throw NotFoundDomainException.create('Blog not found.');
-//     }
-//     return new BlogViewDto(blog);
-//   }
-//
-//   async findAll(
-//     query: GetBlogsQueryParams,
-//   ): Promise<PaginatedViewDto<BlogViewDto[]>> {
-//     const filter: FilterQuery<Blog> = {
-//       deletionStatus: DeletionStatus.NotDeleted,
-//     };
-//
-//     if (query.searchNameTerm) {
-//       filter.name = { $regex: query.searchNameTerm, $options: 'i' };
-//     }
-//     console.log(filter);
-//     const blogs = await this.BlogModel.find(filter)
-//       .sort({ [query.sortBy]: query.sortDirection })
-//       .skip(query.calculateSkip())
-//       .limit(query.pageSize);
-//     const totalCount = await this.BlogModel.countDocuments(filter);
-//     const items = blogs.map((blog: BlogDocument) => new BlogViewDto(blog));
-//     return PaginatedViewDto.mapToView({
-//       items,
-//       totalCount,
-//       page: query.pageNumber,
-//       size: query.pageSize,
-//     });
-//   }
-// }
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { BlogViewDto } from '../api/dto/blog.view-dto';
+import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { GetBlogsQueryParams } from '../api/dto/get-blogs-query-params.input-dto';
+import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
+import { Injectable } from '@nestjs/common';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { Blog } from '../domain/blog.entity';
+import { SortDirection } from '../../../../core/dto/base.query-params.input-dto';
+
+@Injectable()
+export class BlogsQueryRepository {
+  constructor(@InjectRepository(Blog) private blogsRepo: Repository<Blog>) {}
+
+  async findByIdOrNotFoundException(id: string): Promise<BlogViewDto> {
+    const res = await this.blogsRepo
+      .createQueryBuilder('blogs')
+      .where('blogs.id = :id', { id })
+      .andWhere('blogs.deletionStatus = :status', {
+        status: DeletionStatus.NotDeleted,
+      })
+      .getOne();
+    if (!res) {
+      throw NotFoundDomainException.create('Blog not found.');
+    }
+    return new BlogViewDto(res);
+  }
+
+  async findAll(
+    query: GetBlogsQueryParams,
+  ): Promise<PaginatedViewDto<BlogViewDto[]>> {
+    const sortDirection: 'ASC' | 'DESC' =
+      query.sortDirection === SortDirection.Asc ? 'ASC' : 'DESC';
+    const searchName = query.searchNameTerm
+      ? `%${query.searchNameTerm}%`
+      : '%%';
+
+    const searchResult = await this.blogsRepo
+      .createQueryBuilder('blogs')
+      .where('blogs.name ILIKE :name', { name: searchName })
+      .andWhere('blogs.deletionStatus = :status', {
+        status: DeletionStatus.NotDeleted,
+      })
+      .orderBy(`blogs.${query.sortBy}`, sortDirection)
+      .limit(query.pageSize)
+      .offset(query.calculateSkip())
+      .getMany();
+
+    const items = searchResult.map((blog: Blog) => new BlogViewDto(blog));
+
+    const totalCount = await this.blogsRepo
+      .createQueryBuilder('blogs')
+      .where('blogs.name = :name', { name: searchName })
+      .andWhere('blogs.deletionStatus = :status', {
+        status: DeletionStatus.NotDeleted,
+      })
+      .getCount();
+
+    return PaginatedViewDto.mapToView({
+      items,
+      totalCount: totalCount,
+      page: query.pageNumber,
+      size: query.pageSize,
+    });
+  }
+}

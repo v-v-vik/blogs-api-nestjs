@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { Like, LikeEntityType } from '../domain/like-sql.entity';
+import { Like, LikeEntityType } from '../domain/like.entity';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 
 @Injectable()
