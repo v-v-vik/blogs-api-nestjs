@@ -62,12 +62,10 @@ export class PostsController {
     @Param('id', ParamsIdValidationPipe) id: string,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
   ) {
-    return this.postsRepository.findByIdOrNotFoundException(id);
-
-    // return this.postsQueryRepository.findByIdOrNotFoundException(
-    //   id,
-    //   user?.id,
-    // );
+    return this.postsQueryRepository.findByIdOrNotFoundException(
+      id,
+      user?.id,
+    );
   }
 
   @Get(':id/comments')

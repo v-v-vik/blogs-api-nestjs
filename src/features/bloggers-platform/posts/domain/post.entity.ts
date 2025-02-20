@@ -4,15 +4,10 @@ import {
   UpdatePostDomainDto,
 } from './dto/post.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import {
-  AfterLoad,
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Blog } from '../../blogs/domain/blog.entity';
 import { LikesInfo } from '../../likes/dto/like.main-dto';
+import { Like } from '../../likes/domain/like.entity';
 
 @Entity('posts')
 export class Post {
@@ -61,18 +56,21 @@ export class Post {
   @Column({ type: 'int', default: 0 })
   dislikesCount: number;
 
-  extendedLikesInfo: {
-    likesCount: number;
-    dislikesCount: number;
-  };
+  @OneToMany(() => Like, (l) => l.post)
+  likes: Like[];
 
-  @AfterLoad()
-  setExtendedLikesInfo() {
-    this.extendedLikesInfo = {
-      likesCount: this.likesCount,
-      dislikesCount: this.dislikesCount,
-    };
-  }
+  // extendedLikesInfo: {
+  //   likesCount: number;
+  //   dislikesCount: number;
+  // };
+  //
+  // @AfterLoad()
+  // setExtendedLikesInfo() {
+  //   this.extendedLikesInfo = {
+  //     likesCount: this.likesCount,
+  //     dislikesCount: this.dislikesCount,
+  //   };
+  // }
 
   static createNewInstance(dto: CreatePostDomainDto): Post {
     const post = new this();
@@ -117,9 +115,11 @@ export class Post {
   }
 
   updateLikeCount(dto: LikesInfo) {
-    this.extendedLikesInfo = {
-      likesCount: dto.likesCount,
-      dislikesCount: dto.dislikesCount,
-    };
+    this.likesCount = dto.likesCount;
+    this.dislikesCount = dto.dislikesCount;
+
+    // this.extendedLikesInfo = {
+    //   likesCount: dto.likesCount,
+    //   dislikesCount: dto.dislikesCount,
   }
 }

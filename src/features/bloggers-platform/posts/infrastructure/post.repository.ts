@@ -7,9 +7,7 @@ import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
 @Injectable()
 export class PostsRepository {
-  constructor(
-    @InjectRepository(Post) private postsRepo: Repository<Post>,
-  ) {}
+  constructor(@InjectRepository(Post) private postsRepo: Repository<Post>) {}
 
   async findByIdOrNotFoundException(id: string): Promise<Post> {
     const res = await this.postsRepo

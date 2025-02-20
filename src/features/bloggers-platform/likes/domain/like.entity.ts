@@ -1,8 +1,10 @@
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import { ReactionDomainDto } from './dto/like.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../../user-accounts/domain/user.entity';
 import { LikeSQLDto } from './dto/like.sql-dto';
-import { Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Post } from '../../posts/domain/post.entity';
 
 export enum LikeEntityType {
   Post = 'post',
@@ -19,10 +21,48 @@ export enum LikeStatus {
 export class Like {
   @PrimaryGeneratedColumn()
   id: string;
+
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: false,
+  })
   createdAt: Date;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   status: LikeStatus;
+
+  @ManyToOne(() => User)
+  author: User;
+
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
   authorId: string;
+
+  @ManyToOne(() => Post, (post) => post.likes, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parentId' })
+  post: Post;
+
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
   parentId: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  parentType: LikeEntityType;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   deletionStatus: DeletionStatus;
 
   static createNewInstance(dto: ReactionDomainDto) {
