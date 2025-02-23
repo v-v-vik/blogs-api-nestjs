@@ -71,6 +71,8 @@ export class Post {
     post.shortDescription = dto.shortDescription;
     post.content = dto.content;
     post.blogId = Number(dto.blogId);
+    post.createdAt = new Date();
+    post.deletionStatus = DeletionStatus.NotDeleted;
 
     return post as Post;
   }

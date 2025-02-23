@@ -12,19 +12,19 @@ import { BlogsRepository } from './blogs/infrastructure/blog.repository';
 import { PostsQueryRepository } from './posts/infrastructure/post.query-repository';
 import { PostsRepository } from './posts/infrastructure/post.repository';
 import { SuperAdminBlogsController } from './blogs/api/blogs.sa-controller';
-import { SQLCommentsRepository } from './comments/infrastructure/comment-sql.repository';
-import { SQLCommentsQueryRepository } from './comments/infrastructure/comment-sql.query-repository';
-import { SQLLikesRepository } from './likes/infrastructure/like-sql.repository';
+import { CommentsRepository } from './comments/infrastructure/comment.repository';
+import { CommentsQueryRepository } from './comments/infrastructure/comment.query-repository';
+import { LikesRepository } from './likes/infrastructure/like.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Blog } from './blogs/domain/blog.entity';
-import { Like } from './likes/domain/like.entity';
+import { PostLike, CommentLike } from './likes/domain/like.entity';
 import { Post } from './posts/domain/post.entity';
 import { Comment } from './comments/domain/comment.entity';
 import { bloggersUseCaseProviders } from './config/useCase.providers';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Blog, Post, Comment, Like]),
+    TypeOrmModule.forFeature([Blog, Post, Comment, PostLike, CommentLike]),
     UserAccountsModule,
   ],
   controllers: [
@@ -43,9 +43,9 @@ import { bloggersUseCaseProviders } from './config/useCase.providers';
     BlogsQueryRepository,
     PostsRepository,
     PostsQueryRepository,
-    SQLCommentsRepository,
-    SQLCommentsQueryRepository,
-    SQLLikesRepository,
+    CommentsRepository,
+    CommentsQueryRepository,
+    LikesRepository,
   ],
   exports: [TypeOrmModule],
 })

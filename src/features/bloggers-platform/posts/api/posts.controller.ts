@@ -31,7 +31,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { PostsQueryRepository } from '../infrastructure/post.query-repository';
 import { PostsRepository } from '../infrastructure/post.repository';
 import { ParamsIdValidationPipe } from '../../../../core/pipes/id-param-validation.pipe';
-import { SQLCommentsQueryRepository } from '../../comments/infrastructure/comment-sql.query-repository';
+import { CommentsQueryRepository } from '../../comments/infrastructure/comment.query-repository';
 import { ReactionInputDto } from '../../likes/api/dto/like.input-dto';
 import { ReactOnPostCommand } from '../../likes/application/useCases/react-on-post.usecase';
 
@@ -43,7 +43,7 @@ export class PostsController {
     private postsQueryRepository: PostsQueryRepository,
     private postsRepository: PostsRepository,
     private commandBus: CommandBus,
-    private sqlCommentsQueryRepository: SQLCommentsQueryRepository,
+    private commentsQueryRepository: CommentsQueryRepository,
   ) {}
 
   @Get()
@@ -74,7 +74,7 @@ export class PostsController {
   ): Promise<PaginatedViewDto<CommentViewDto[]>> {
     const foundPost =
       await this.postsRepository.findByIdOrNotFoundException(id);
-    return this.sqlCommentsQueryRepository.findByPostId(
+    return this.commentsQueryRepository.findByPostId(
       foundPost.id.toString(),
       query,
       user?.id,
@@ -102,9 +102,7 @@ export class PostsController {
     const commentId = await this.commandBus.execute(
       new CreateCommentCommand(foundPost.id.toString(), dto, user.id),
     );
-    return this.sqlCommentsQueryRepository.findByIdOrNotFoundException(
-      commentId,
-    );
+    return this.commentsQueryRepository.findByIdOrNotFoundException(commentId);
   }
 
   @Put(':id/like-status')

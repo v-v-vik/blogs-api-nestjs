@@ -4,7 +4,13 @@ import {
   UpdateCommentDomainDto,
 } from './dto/comment.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { LikesInfo } from '../../likes/dto/like.main-dto';
 import { User } from '../../../user-accounts/domain/user.entity';
 import { Post } from '../../posts/domain/post.entity';
@@ -19,8 +25,10 @@ export class Comment {
     nullable: false,
   })
   content: string;
+
   @ManyToOne(() => User)
   user: User;
+
   @Column({
     type: 'int',
     nullable: false,
@@ -31,6 +39,7 @@ export class Comment {
     nullable: false,
   })
   createdAt: Date;
+
   @ManyToOne(() => Post)
   post: Post;
   @Column({
@@ -38,6 +47,7 @@ export class Comment {
     nullable: false,
   })
   postId: number;
+
   @Column({ type: 'int', default: 0 })
   likesCount: number;
   @Column({ type: 'int', default: 0 })
@@ -56,6 +66,8 @@ export class Comment {
     comment.content = dto.content;
     comment.userId = Number(dto.userId);
     comment.postId = Number(dto.postId);
+    comment.createdAt = new Date();
+    comment.deletionStatus = DeletionStatus.NotDeleted;
 
     return comment as Comment;
   }

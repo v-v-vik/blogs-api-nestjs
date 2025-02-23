@@ -1,12 +1,12 @@
 import { LikeStatus } from '../../../likes/domain/like.entity';
-import { CommentSQLDto } from '../../domain/dto/comment.sql-dto';
+import { Comment } from '../../domain/comment.entity';
 
 class LikesInfoView {
   likesCount: number;
   dislikesCount: number;
   myStatus: string;
 
-  constructor(comment: CommentSQLDto, userReaction: LikeStatus) {
+  constructor(comment: Comment, userReaction: LikeStatus) {
     this.likesCount = comment.likesCount;
     this.dislikesCount = comment.dislikesCount;
     this.myStatus = userReaction;
@@ -23,12 +23,12 @@ export class CommentViewDto {
   createdAt: string;
   likesInfo: LikesInfoView;
 
-  constructor(comment: CommentSQLDto, userReaction: LikeStatus) {
+  constructor(comment: Comment, userReaction: LikeStatus) {
     this.id = comment.id.toString();
     this.content = comment.content;
     this.commentatorInfo = {
       userId: comment.userId.toString(),
-      userLogin: comment.userLogin,
+      userLogin: comment.user.login,
     };
     this.createdAt = comment.createdAt.toISOString();
     this.likesInfo = new LikesInfoView(comment, userReaction);

@@ -20,7 +20,7 @@ import { UpdateCommentInputDto } from './dto/comment.input-dto';
 import { DeleteCommentCommand } from '../application/useCases/delete-comment.usecase';
 import { JwtOptionalAuthGuard } from '../../../user-accounts/guards/bearer/optional-jwt-auth.guard';
 import { SkipThrottle } from '@nestjs/throttler';
-import { SQLCommentsQueryRepository } from '../infrastructure/comment-sql.query-repository';
+import { CommentsQueryRepository } from '../infrastructure/comment.query-repository';
 import { ParamsIdValidationPipe } from '../../../../core/pipes/id-param-validation.pipe';
 import { ReactionInputDto } from '../../likes/api/dto/like.input-dto';
 import { ReactOnCommentCommand } from '../../likes/application/useCases/react-on-comment.usercase';
@@ -29,7 +29,7 @@ import { ReactOnCommentCommand } from '../../likes/application/useCases/react-on
 @Controller('comments')
 export class CommentsController {
   constructor(
-    private sqlCommentsQueryRepository: SQLCommentsQueryRepository,
+    private commentsQueryRepository: CommentsQueryRepository,
     private commandBus: CommandBus,
   ) {}
 
@@ -40,7 +40,7 @@ export class CommentsController {
     @Param('id', ParamsIdValidationPipe) id: string,
     @ExtractUserFromRequestIfExists() user: UserContextDto,
   ): Promise<CommentViewDto> {
-    return this.sqlCommentsQueryRepository.findByIdOrNotFoundException(
+    return this.commentsQueryRepository.findByIdOrNotFoundException(
       id,
       user?.id,
     );

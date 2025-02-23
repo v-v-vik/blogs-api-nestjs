@@ -36,7 +36,7 @@ export class BlogsQueryRepository {
       ? `%${query.searchNameTerm}%`
       : '%%';
 
-    const searchResult = await this.blogsRepo
+    const qBuilder = await this.blogsRepo
       .createQueryBuilder('blogs')
       .where('blogs.name ILIKE :name', { name: searchName })
       .andWhere('blogs.deletionStatus = :status', {
@@ -44,22 +44,15 @@ export class BlogsQueryRepository {
       })
       .orderBy(`blogs.${query.sortBy}`, sortDirection)
       .limit(query.pageSize)
-      .offset(query.calculateSkip())
-      .getMany();
+      .offset(query.calculateSkip());
 
-    const items = searchResult.map((blog: Blog) => new BlogViewDto(blog));
+    const [items, totalCount] = await qBuilder.getManyAndCount();
 
-    const totalCount = await this.blogsRepo
-      .createQueryBuilder('blogs')
-      .where('blogs.name = :name', { name: searchName })
-      .andWhere('blogs.deletionStatus = :status', {
-        status: DeletionStatus.NotDeleted,
-      })
-      .getCount();
+    const mappedItems = items.map((blog: Blog) => new BlogViewDto(blog));
 
     return PaginatedViewDto.mapToView({
-      items,
-      totalCount: totalCount,
+      items: mappedItems,
+      totalCount,
       page: query.pageNumber,
       size: query.pageSize,
     });

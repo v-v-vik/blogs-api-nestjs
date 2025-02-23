@@ -2,7 +2,13 @@ import { CreateUserDomainDto } from './dto/user.domain-dto';
 import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
 import { randomUUID } from 'node:crypto';
 import add from 'date-fns/add';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserSQLDto } from './dto/user.sql-dto';
 
 export enum AccountStatus {

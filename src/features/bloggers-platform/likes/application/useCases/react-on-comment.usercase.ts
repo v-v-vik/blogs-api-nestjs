@@ -3,9 +3,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LikesRepository } from '../../infrastructure/like.repository';
 import { LikeService } from '../like.service';
 import { LikeStatus } from '../../domain/like.entity';
-import { CommentLike, LikeEntityType } from '../../domain/like.entity';
+import { CommentLike } from '../../domain/like.entity';
 import { ReactionDomainDto } from '../../domain/dto/like.domain-dto';
-import { CommentsRepository } from '../../../comments/infrastructure/comment-sql.repository';
+import { CommentsRepository } from '../../../comments/infrastructure/comment.repository';
 
 export class ReactOnCommentCommand {
   constructor(
@@ -33,10 +33,9 @@ export class ReactOnCommentUseCase
     const foundComment =
       await this.commentsRepository.findByIdOrNotFoundException(commentId);
     const currentStatus =
-      await this.likesRepository.findReactionStatusByUserIdParentId(
+      await this.likesRepository.findCommentReactionStatusByUserIdParentId(
         userId,
         commentId,
-        LikeEntityType.Comment,
       );
     if (currentStatus === dto.likeStatus) {
       return;
@@ -50,10 +49,9 @@ export class ReactOnCommentUseCase
     await this.commentsRepository.save(foundComment);
     if (currentStatus !== null && currentStatus !== dto.likeStatus) {
       const foundReaction =
-        await this.likesRepository.findReactionOrNoFoundException(
+        await this.likesRepository.findCommentReactionOrNoFoundException(
           userId,
           commentId,
-          LikeEntityType.Comment,
         );
       foundReaction.flagAsDeleted();
       await this.likesRepository.saveCommentLike(foundReaction);

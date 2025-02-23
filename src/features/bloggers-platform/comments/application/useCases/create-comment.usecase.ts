@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateCommentDto } from '../../dto/comment.main-dto';
-import { SQLCommentsRepository } from '../../infrastructure/comment-sql.repository';
+import { CommentsRepository } from '../../infrastructure/comment.repository';
 import { Comment } from '../../domain/comment.entity';
 import { CreateCommentDomainDto } from '../../domain/dto/comment.domain-dto';
 
@@ -16,7 +16,7 @@ export class CreateCommentCommand {
 export class CreateCommentUseCase
   implements ICommandHandler<CreateCommentCommand>
 {
-  constructor(private sqlCommentsRepository: SQLCommentsRepository) {}
+  constructor(private sqlCommentsRepository: CommentsRepository) {}
 
   async execute(command: CreateCommentCommand): Promise<string> {
     const domainDto: CreateCommentDomainDto = {
@@ -25,6 +25,6 @@ export class CreateCommentUseCase
       userId: command.userId,
     };
     const newComment = Comment.createNewInstance(domainDto);
-    return await this.sqlCommentsRepository.create(newComment);
+    return await this.sqlCommentsRepository.save(newComment);
   }
 }

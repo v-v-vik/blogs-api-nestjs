@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { GetPostsQueryParams } from '../api/dto/get-posts-query-params.input-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { LikeStatus, PostLike } from '../../likes/domain/like.entity';
@@ -15,49 +15,49 @@ import { SortDirection } from '../../../../core/dto/base.query-params.input-dto'
 
 @Injectable()
 export class PostsQueryRepository {
-  constructor(
-    @InjectRepository(Post) private postsRepo: Repository<Post>,
-    @InjectDataSource() private dataSource: DataSource,
-  ) {}
+  constructor(@InjectRepository(Post) private postsRepo: Repository<Post>) {}
 
   async findByIdOrNotFoundException(
     id: string,
     userId?: string,
   ): Promise<PostSQLViewDto> {
     let userReaction: LikeStatus = LikeStatus.None;
-    const post = await this.postsRepo
-      .createQueryBuilder('post')
-      .leftJoin('post.blog', 'blog')
-      .addSelect('blog.name')
-      .leftJoinAndSelect('post.likes', 'like')
-      .leftJoin('like.author', 'author')
-      .addSelect('author.login')
-      .where('post.id = :id', { id })
-      .andWhere('post.deletionStatus = :status', {
-        status: DeletionStatus.NotDeleted,
-      })
-      .andWhere((qb) => {
-        const subQuery = qb
-          .subQuery()
-          .select('likeSub.id')
-          .from(PostLike, 'likeSub')
-          .where('likeSub.parentId = post.id')
-          .andWhere('likeSub.deletionStatus = :lDelStatus', {
-            lDelStatus: DeletionStatus.NotDeleted,
-          })
-          .andWhere('likeSub.status = :lStatus', { lStatus: LikeStatus.Like })
-          .orderBy('likeSub.createdAt', 'DESC')
-          .limit(3)
-          .getQuery();
-        return `like.id IN (${subQuery})`;
-      })
-      .getOne();
+    const post = await this.postsRepo.findOne({
+      relations: {
+        blog: true,
+        likes: {
+          author: true,
+        },
+      },
+      where: {
+        id: Number(id),
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
+      order: {
+        likes: {
+          createdAt: 'DESC',
+        },
+      },
+    });
+
+    console.log(post);
 
     if (!post) {
       throw NotFoundDomainException.create('Post not found.');
     }
 
-    const newestLikes = post.likes.map(
+    const formattedLikes = {
+      ...post,
+      likes: post.likes
+        .filter(
+          (like) =>
+            like.deletionStatus === DeletionStatus.NotDeleted &&
+            like.status === LikeStatus.Like,
+        )
+        .slice(0, 3),
+    };
+
+    const newestLikes = formattedLikes.likes.map(
       (like: PostLike) => new NewestLikesViewDto(like),
     );
 

@@ -1,7 +1,13 @@
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import { ReactionDomainDto } from './dto/like.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../../../user-accounts/domain/user.entity';
 import { Post } from '../../posts/domain/post.entity';
 import { Comment } from '../../comments/domain/comment.entity';
@@ -58,7 +64,6 @@ abstract class Like {
 
 @Entity('commentLikes')
 export class CommentLike extends Like {
-
   @ManyToOne(() => Comment, (comment) => comment.likes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'parentId' })
   comment: Comment;
@@ -69,21 +74,20 @@ export class CommentLike extends Like {
   })
   parentId: number;
 
-
   static createNewInstance(dto: ReactionDomainDto) {
     const reaction = new this();
     reaction.status = dto.status;
     reaction.authorId = Number(dto.authorId);
     reaction.parentId = Number(dto.parentId);
+    reaction.createdAt = new Date();
+    reaction.deletionStatus = DeletionStatus.NotDeleted;
 
     return reaction as CommentLike;
   }
-
 }
 
 @Entity('postLikes')
 export class PostLike extends Like {
-
   @ManyToOne(() => Post, (post) => post.likes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'parentId' })
   post: Post;
@@ -99,10 +103,11 @@ export class PostLike extends Like {
     reaction.status = dto.status;
     reaction.authorId = Number(dto.authorId);
     reaction.parentId = Number(dto.parentId);
+    reaction.createdAt = new Date();
+    reaction.deletionStatus = DeletionStatus.NotDeleted;
 
     return reaction as PostLike;
   }
-
 }
 
 //

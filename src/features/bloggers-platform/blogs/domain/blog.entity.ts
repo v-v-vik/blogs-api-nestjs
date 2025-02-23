@@ -13,6 +13,7 @@ export class Blog {
   @Column({
     type: 'varchar',
     nullable: false,
+    collation: 'C',
   })
   name: string;
   @Column({

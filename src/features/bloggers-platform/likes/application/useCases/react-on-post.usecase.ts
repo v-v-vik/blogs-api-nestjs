@@ -1,5 +1,5 @@
 import { ReactionDto } from '../../dto/like.main-dto';
-import { LikeEntityType, LikeStatus, PostLike } from '../../domain/like.entity';
+import { LikeStatus, PostLike } from '../../domain/like.entity';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { LikesRepository } from '../../infrastructure/like.repository';
 import { PostsRepository } from '../../../posts/infrastructure/post.repository';
@@ -26,10 +26,9 @@ export class ReactOnPostUseCase implements ICommandHandler<ReactOnPostCommand> {
     const foundPost =
       await this.postsRepository.findByIdOrNotFoundException(postId);
     const currentStatus =
-      await this.likesRepository.findReactionStatusByUserIdParentId(
+      await this.likesRepository.findPostReactionStatusByUserIdParentId(
         userId,
         postId,
-        LikeEntityType.Post,
       );
     if (currentStatus === dto.likeStatus) {
       return;
@@ -43,10 +42,9 @@ export class ReactOnPostUseCase implements ICommandHandler<ReactOnPostCommand> {
     await this.postsRepository.save(foundPost);
     if (currentStatus !== null && currentStatus !== dto.likeStatus) {
       const foundReaction =
-        await this.likesRepository.findReactionOrNoFoundException(
+        await this.likesRepository.findPostReactionOrNoFoundException(
           userId,
           postId,
-          LikeEntityType.Post,
         );
       foundReaction.flagAsDeleted();
       await this.likesRepository.savePostLike(foundReaction);
