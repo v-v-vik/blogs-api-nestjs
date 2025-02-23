@@ -4,45 +4,58 @@ import {
   UpdateCommentDomainDto,
 } from './dto/comment.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { CommentSQLDto } from './dto/comment.sql-dto';
-import { Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { LikesInfo } from '../../likes/dto/like.main-dto';
+import { User } from '../../../user-accounts/domain/user.entity';
+import { Post } from '../../posts/domain/post.entity';
+import { CommentLike } from '../../likes/domain/like.entity';
 
 @Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   content: string;
-  userId: string;
+  @ManyToOne(() => User)
+  user: User;
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  userId: number;
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: false,
+  })
   createdAt: Date;
-  postId: string;
-  likesInfo: {
-    likesCount: number;
-    dislikesCount: number;
-  };
+  @ManyToOne(() => Post)
+  post: Post;
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  postId: number;
+  @Column({ type: 'int', default: 0 })
+  likesCount: number;
+  @Column({ type: 'int', default: 0 })
+  dislikesCount: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   deletionStatus: DeletionStatus;
+
+  @OneToMany(() => CommentLike, (l) => l.comment)
+  likes: CommentLike[];
 
   static createNewInstance(dto: CreateCommentDomainDto): Comment {
     const comment = new this();
     comment.content = dto.content;
-    comment.userId = dto.userId;
-    comment.postId = dto.postId;
-
-    return comment as Comment;
-  }
-
-  static createFromExistingDataInstance(dbComment: CommentSQLDto): Comment {
-    const comment = new this();
-    comment.id = dbComment.id.toString();
-    comment.content = dbComment.content;
-    comment.userId = dbComment.userId.toString();
-    comment.createdAt = dbComment.createdAt;
-    comment.postId = dbComment.postId.toString();
-    comment.likesInfo = {
-      likesCount: dbComment.likesCount,
-      dislikesCount: dbComment.dislikesCount,
-    };
-    comment.deletionStatus = dbComment.deletionStatus;
+    comment.userId = Number(dto.userId);
+    comment.postId = Number(dto.postId);
 
     return comment as Comment;
   }
@@ -59,9 +72,7 @@ export class Comment {
   }
 
   updateLikeCount(dto: LikesInfo) {
-    this.likesInfo = {
-      likesCount: dto.likesCount,
-      dislikesCount: dto.dislikesCount,
-    };
+    this.likesCount = dto.likesCount;
+    this.dislikesCount = dto.dislikesCount;
   }
 }

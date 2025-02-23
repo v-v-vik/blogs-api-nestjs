@@ -4,15 +4,21 @@ import {
   UpdatePostDomainDto,
 } from './dto/post.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Blog } from '../../blogs/domain/blog.entity';
 import { LikesInfo } from '../../likes/dto/like.main-dto';
-import { Like } from '../../likes/domain/like.entity';
+import { PostLike } from '../../likes/domain/like.entity';
 
 @Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Column({
     type: 'varchar',
@@ -56,21 +62,8 @@ export class Post {
   @Column({ type: 'int', default: 0 })
   dislikesCount: number;
 
-  @OneToMany(() => Like, (l) => l.post)
-  likes: Like[];
-
-  // extendedLikesInfo: {
-  //   likesCount: number;
-  //   dislikesCount: number;
-  // };
-  //
-  // @AfterLoad()
-  // setExtendedLikesInfo() {
-  //   this.extendedLikesInfo = {
-  //     likesCount: this.likesCount,
-  //     dislikesCount: this.dislikesCount,
-  //   };
-  // }
+  @OneToMany(() => PostLike, (l) => l.post)
+  likes: PostLike[];
 
   static createNewInstance(dto: CreatePostDomainDto): Post {
     const post = new this();
@@ -81,24 +74,6 @@ export class Post {
 
     return post as Post;
   }
-
-  // static createFromExistingDataInstance(dbPost: PostSQLDto): Post {
-  //   const post = new this();
-  //   post.id = dbPost.id.toString();
-  //   post.title = dbPost.title;
-  //   post.shortDescription = dbPost.shortDescription;
-  //   post.content = dbPost.content;
-  //   post.blogId = dbPost.blogId.toString();
-  //   post.blogName = dbPost.blogName;
-  //   post.createdAt = dbPost.createdAt;
-  //   post.extendedLikesInfo = {
-  //     likesCount: dbPost.likesCount,
-  //     dislikesCount: dbPost.dislikesCount,
-  //   };
-  //   post.deletionStatus = dbPost.deletionStatus;
-  //
-  //   return post as Post;
-  // }
 
   flagAsDeleted() {
     if (this.deletionStatus !== DeletionStatus.NotDeleted) {
@@ -117,9 +92,5 @@ export class Post {
   updateLikeCount(dto: LikesInfo) {
     this.likesCount = dto.likesCount;
     this.dislikesCount = dto.dislikesCount;
-
-    // this.extendedLikesInfo = {
-    //   likesCount: dto.likesCount,
-    //   dislikesCount: dto.dislikesCount,
   }
 }

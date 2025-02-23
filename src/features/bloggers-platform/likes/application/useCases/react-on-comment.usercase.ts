@@ -1,11 +1,11 @@
 import { ReactionDto } from '../../dto/like.main-dto';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { SQLLikesRepository } from '../../infrastructure/like-sql.repository';
+import { LikesRepository } from '../../infrastructure/like.repository';
 import { LikeService } from '../like.service';
 import { LikeStatus } from '../../domain/like.entity';
-import { Like, LikeEntityType } from '../../domain/like.entity';
+import { CommentLike, LikeEntityType } from '../../domain/like.entity';
 import { ReactionDomainDto } from '../../domain/dto/like.domain-dto';
-import { SQLCommentsRepository } from '../../../comments/infrastructure/comment-sql.repository';
+import { CommentsRepository } from '../../../comments/infrastructure/comment-sql.repository';
 
 export class ReactOnCommentCommand {
   constructor(
@@ -20,8 +20,8 @@ export class ReactOnCommentUseCase
   implements ICommandHandler<ReactOnCommentCommand>
 {
   constructor(
-    private sqlLikesRepository: SQLLikesRepository,
-    private sqlCommentsRepository: SQLCommentsRepository,
+    private likesRepository: LikesRepository,
+    private commentsRepository: CommentsRepository,
     private likeService: LikeService,
   ) {}
 
@@ -31,9 +31,9 @@ export class ReactOnCommentUseCase
     userId,
   }: ReactOnCommentCommand): Promise<void> {
     const foundComment =
-      await this.sqlCommentsRepository.findByIdOrNotFoundException(commentId);
-    const currentStatus: LikeStatus =
-      await this.sqlLikesRepository.findReactionStatusByUserIdParentId(
+      await this.commentsRepository.findByIdOrNotFoundException(commentId);
+    const currentStatus =
+      await this.likesRepository.findReactionStatusByUserIdParentId(
         userId,
         commentId,
         LikeEntityType.Comment,
@@ -45,28 +45,25 @@ export class ReactOnCommentUseCase
       currentStatus ?? LikeStatus.None,
       dto.likeStatus,
       foundComment,
-      LikeEntityType.Comment,
     );
     foundComment.updateLikeCount(updateReactionCounts);
-    await this.sqlCommentsRepository.update(foundComment);
+    await this.commentsRepository.save(foundComment);
     if (currentStatus !== null && currentStatus !== dto.likeStatus) {
-      console.log('deletion block');
       const foundReaction =
-        await this.sqlLikesRepository.findReactionOrNoFoundException(
+        await this.likesRepository.findReactionOrNoFoundException(
           userId,
           commentId,
           LikeEntityType.Comment,
         );
-      console.log('found reaction is', foundReaction);
       foundReaction.flagAsDeleted();
-      await this.sqlLikesRepository.update(foundReaction);
+      await this.likesRepository.saveCommentLike(foundReaction);
     }
     const domainDto: ReactionDomainDto = {
       status: dto.likeStatus,
       authorId: userId,
       parentId: commentId,
     };
-    const reaction = Like.createNewInstance(domainDto);
-    await this.sqlLikesRepository.create(reaction, LikeEntityType.Comment);
+    const reaction: CommentLike = CommentLike.createNewInstance(domainDto);
+    await this.likesRepository.saveCommentLike(reaction);
   }
 }

@@ -1,10 +1,9 @@
 import { ReactionDto } from '../../dto/like.main-dto';
-import { Like, LikeEntityType } from '../../domain/like.entity';
+import { LikeEntityType, LikeStatus, PostLike } from '../../domain/like.entity';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { SQLLikesRepository } from '../../infrastructure/like-sql.repository';
+import { LikesRepository } from '../../infrastructure/like.repository';
 import { PostsRepository } from '../../../posts/infrastructure/post.repository';
 import { LikeService } from '../like.service';
-import { LikeStatus } from '../../domain/like.entity';
 import { ReactionDomainDto } from '../../domain/dto/like.domain-dto';
 
 export class ReactOnPostCommand {
@@ -18,7 +17,7 @@ export class ReactOnPostCommand {
 @CommandHandler(ReactOnPostCommand)
 export class ReactOnPostUseCase implements ICommandHandler<ReactOnPostCommand> {
   constructor(
-    private sqlLikesRepository: SQLLikesRepository,
+    private likesRepository: LikesRepository,
     private postsRepository: PostsRepository,
     private likeService: LikeService,
   ) {}
@@ -26,8 +25,8 @@ export class ReactOnPostUseCase implements ICommandHandler<ReactOnPostCommand> {
   async execute({ dto, postId, userId }: ReactOnPostCommand): Promise<void> {
     const foundPost =
       await this.postsRepository.findByIdOrNotFoundException(postId);
-    const currentStatus: LikeStatus =
-      await this.sqlLikesRepository.findReactionStatusByUserIdParentId(
+    const currentStatus =
+      await this.likesRepository.findReactionStatusByUserIdParentId(
         userId,
         postId,
         LikeEntityType.Post,
@@ -39,26 +38,25 @@ export class ReactOnPostUseCase implements ICommandHandler<ReactOnPostCommand> {
       currentStatus ?? LikeStatus.None,
       dto.likeStatus,
       foundPost,
-      LikeEntityType.Post,
     );
     foundPost.updateLikeCount(updateReactionCounts);
     await this.postsRepository.save(foundPost);
     if (currentStatus !== null && currentStatus !== dto.likeStatus) {
       const foundReaction =
-        await this.sqlLikesRepository.findReactionOrNoFoundException(
+        await this.likesRepository.findReactionOrNoFoundException(
           userId,
           postId,
           LikeEntityType.Post,
         );
       foundReaction.flagAsDeleted();
-      await this.sqlLikesRepository.update(foundReaction);
+      await this.likesRepository.savePostLike(foundReaction);
     }
     const domainDto: ReactionDomainDto = {
       status: dto.likeStatus,
       authorId: userId,
       parentId: postId,
     };
-    const reaction = Like.createNewInstance(domainDto);
-    await this.sqlLikesRepository.create(reaction, LikeEntityType.Post);
+    const reaction: PostLike = PostLike.createNewInstance(domainDto);
+    await this.likesRepository.savePostLike(reaction);
   }
 }

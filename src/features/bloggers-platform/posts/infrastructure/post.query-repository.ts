@@ -3,12 +3,15 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { GetPostsQueryParams } from '../api/dto/get-posts-query-params.input-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
-import { Like, LikeStatus } from '../../likes/domain/like.entity';
+import { LikeStatus, PostLike } from '../../likes/domain/like.entity';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { PostSQLDto } from '../domain/dto/post.sql-dto';
-import { PostSQLViewDto } from '../api/dto/post-sql.view-dto';
+import {
+  NewestLikesViewDto,
+  PostSQLViewDto,
+} from '../api/dto/post-sql.view-dto';
 import { Post } from '../domain/post.entity';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { SortDirection } from '../../../../core/dto/base.query-params.input-dto';
 
 @Injectable()
 export class PostsQueryRepository {
@@ -21,8 +24,8 @@ export class PostsQueryRepository {
     id: string,
     userId?: string,
   ): Promise<PostSQLViewDto> {
-    const userReaction: LikeStatus = LikeStatus.None;
-    const res = await this.postsRepo
+    let userReaction: LikeStatus = LikeStatus.None;
+    const post = await this.postsRepo
       .createQueryBuilder('post')
       .leftJoin('post.blog', 'blog')
       .addSelect('blog.name')
@@ -37,9 +40,8 @@ export class PostsQueryRepository {
         const subQuery = qb
           .subQuery()
           .select('likeSub.id')
-          .from(Like, 'likeSub')
+          .from(PostLike, 'likeSub')
           .where('likeSub.parentId = post.id')
-          .andWhere('likeSub.parentType = :type', { type: 'post' })
           .andWhere('likeSub.deletionStatus = :lDelStatus', {
             lDelStatus: DeletionStatus.NotDeleted,
           })
@@ -51,254 +53,120 @@ export class PostsQueryRepository {
       })
       .getOne();
 
-    console.log(res);
-
-    if (!res) {
+    if (!post) {
       throw NotFoundDomainException.create('Post not found.');
     }
-    return new PostSQLViewDto(
-      res,
-      userReaction,
-      // userId
-      //   ? res[0].userReaction !== null
-      //     ? res[0].userReaction
-      //     : userReaction
-      //   : userReaction,
-    );
-  }
 
-  // async findByIdOrNotFoundException(
-  //   id: string,
-  //   userId?: string,
-  // ): Promise<PostSQLViewDto> {
-  //   const userReaction: LikeStatus = LikeStatus.None;
-  //   const res = await this.dataSource.query(
-  //     `SELECT p.*,
-  //   b."name" as "blogName",
-  //   l."status" as "userReaction",
-  //   l1."createdAt" as "likeDate1",
-  //   l11."authorId" as "likeUserId1",
-  //   u1."login" as "likeUserLogin1",
-  //   l2."createdAt" as "likeDate2",
-  //   l21."authorId" as "likeUserId2",
-  //   u2."login" as "likeUserLogin2",
-  //   l3."createdAt" as "likeDate3",
-  //   l31."authorId" as "likeUserId3",
-  //   u3."login" as "likeUserLogin3"
-  //
-  //   FROM public."posts" as p
-  //
-  //   LEFT JOIN public."blogs" as b
-  //   ON p."blogId" = b."id"
-  //
-  //   LEFT JOIN public."likes" as l
-  //   ON p."id" = l."parentId" AND (l."authorId" = $2 OR $2 IS NULL)
-  //   AND l."deletionStatus"='not-deleted'
-  //
-  //   LEFT JOIN public."likes" as l1
-  //   ON l1."parentId" = p."id" AND l1."deletionStatus"='not-deleted' AND l1."createdAt" = (
-  //   SELECT lsub."createdAt"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 0
-  //   )
-  //
-  //   LEFT JOIN public."likes" as l2
-  //   ON l2."parentId" = p."id" AND l2."deletionStatus"='not-deleted' AND l2."createdAt" = (
-  //   SELECT lsub."createdAt"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 1
-  //   )
-  //
-  //   LEFT JOIN public."likes" as l3
-  //   ON l3."parentId" = p."id" AND l3."deletionStatus"='not-deleted' AND l3."createdAt" = (
-  //   SELECT lsub."createdAt"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 2
-  //   )
-  //
-  //   LEFT JOIN public."likes" as l11
-  //   ON l11."parentId" = p."id" AND l11."deletionStatus"='not-deleted' AND l11."authorId" = (
-  //   SELECT lsub."authorId"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 0
-  //   )
-  //
-  //   LEFT JOIN public."likes" as l21
-  //   ON l21."parentId" = p."id" AND l21."deletionStatus"='not-deleted' AND l21."authorId" = (
-  //   SELECT lsub."authorId"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 1
-  //   )
-  //
-  //   LEFT JOIN public."likes" as l31
-  //   ON l31."parentId" = p."id" AND l31."deletionStatus"='not-deleted' AND l31."authorId" = (
-  //   SELECT lsub."authorId"
-  //   FROM public."likes" as lsub
-  //   WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-  //   ORDER BY lsub."createdAt" DESC
-  //   LIMIT 1 OFFSET 2
-  //   )
-  //
-  //   LEFT JOIN public."users" as u1
-  //   ON l11."authorId"=u1."id"
-  //
-  //   LEFT JOIN public."users" as u2
-  //   ON l21."authorId"=u2."id"
-  //
-  //   LEFT JOIN public."users" as u3
-  //   ON l31."authorId"=u3."id"
-  //
-  //   WHERE p."id"=$1 AND p."deletionStatus"='not-deleted'`,
-  //     [id, userId || null],
-  //   );
-  //   console.log('QRepo Post: result from the search', res);
-  //   if (res.length === 0) {
-  //     throw NotFoundDomainException.create('Post not found.');
-  //   }
-  //   return new PostSQLViewDto(
-  //     res[0],
-  //     userId
-  //       ? res[0].userReaction !== null
-  //         ? res[0].userReaction
-  //         : userReaction
-  //       : userReaction,
-  //   );
-  // }
+    const newestLikes = post.likes.map(
+      (like: PostLike) => new NewestLikesViewDto(like),
+    );
+
+    if (userId) {
+      const userReactionQB = await this.postsRepo
+        .createQueryBuilder('post')
+        .leftJoin(
+          'post.likes',
+          'userLike',
+          'userLike.deletionStatus = :notDeleted AND userLike.authorId = :userId',
+          {
+            userId: Number(userId),
+            notDeleted: DeletionStatus.NotDeleted,
+          },
+        )
+        .addSelect('userLike.status')
+        .where('post.id = :id', { id })
+        .andWhere('post.deletionStatus = :status', {
+          status: DeletionStatus.NotDeleted,
+        })
+        .getOne();
+
+      if (userReactionQB?.likes[0].status)
+        userReaction = userReactionQB?.likes[0].status;
+    }
+
+    return new PostSQLViewDto(post, userReaction, newestLikes);
+  }
 
   async findAll(
     query: GetPostsQueryParams,
     blogId?: string,
     userId?: string,
   ): Promise<PaginatedViewDto<PostSQLViewDto[]>> {
-    const userReaction: LikeStatus = LikeStatus.None;
-    const sortDirection = query.sortDirection.toUpperCase();
-    const searchResult = await this.dataSource.query(
-      `SELECT p.*, 
-    b."name" as "blogName",
-    l."status" as "userReaction",
-    l1."createdAt" as "likeDate1",
-    l11."authorId" as "likeUserId1",
-    u1."login" as "likeUserLogin1",
-    l2."createdAt" as "likeDate2",
-    l21."authorId" as "likeUserId2",
-    u2."login" as "likeUserLogin2",
-    l3."createdAt" as "likeDate3",
-    l31."authorId" as "likeUserId3",
-    u3."login" as "likeUserLogin3"
-    
-    FROM public."posts" as p
-        
-    LEFT JOIN public."blogs" as b
-    ON p."blogId" = b."id"
-        
-    LEFT JOIN public."likes" as l
-    ON p."id" = l."parentId" AND (l."authorId" = $2 OR $2 IS NULL)
-    
-    
-    LEFT JOIN public."likes" as l1
-    ON l1."parentId" = p."id" AND l1."deletionStatus"='not-deleted' AND l1."createdAt" = (
-    SELECT lsub."createdAt"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id"  AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 0
-    )
-    
-    LEFT JOIN public."likes" as l2
-    ON l2."parentId" = p."id" AND l2."deletionStatus"='not-deleted' AND l2."createdAt" = (
-    SELECT lsub."createdAt"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 1
-    )
-    
-    LEFT JOIN public."likes" as l3
-    ON l3."parentId" = p."id" AND l3."deletionStatus"='not-deleted' AND l3."createdAt" = (
-    SELECT lsub."createdAt"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 2
-    )
-    
-    LEFT JOIN public."likes" as l11
-    ON l11."parentId" = p."id" AND l11."deletionStatus"='not-deleted' AND l11."authorId" = (
-    SELECT lsub."authorId"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 0
-    )
-    
-    LEFT JOIN public."likes" as l21
-    ON l21."parentId" = p."id" AND l21."deletionStatus"='not-deleted' AND l21."authorId" = (
-    SELECT lsub."authorId"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 1
-    )
-    
-    LEFT JOIN public."likes" as l31
-    ON l31."parentId" = p."id" AND l31."deletionStatus"='not-deleted' AND l31."authorId" = (
-    SELECT lsub."authorId"
-    FROM public."likes" as lsub
-    WHERE lsub."parentId"=p."id" AND lsub."status"='Like'
-    ORDER BY lsub."createdAt" DESC
-    LIMIT 1 OFFSET 2
-    )
-    
-    LEFT JOIN public."users" as u1
-    ON l11."authorId"=u1."id"
-    
-    LEFT JOIN public."users" as u2
-    ON l21."authorId"=u2."id"
-    
-    LEFT JOIN public."users" as u3
-    ON l31."authorId"=u3."id"
-        
-        
-    WHERE p."deletionStatus" = 'not-deleted' AND (p."blogId"= $1 OR $1 IS NULL)
-    ORDER BY "${query.sortBy}" ${sortDirection}
-    LIMIT ${query.pageSize} OFFSET ${query.calculateSkip()}`,
-      [blogId || null, userId || null],
-    );
+    const sortDirection: 'ASC' | 'DESC' =
+      query.sortDirection === SortDirection.Asc ? 'ASC' : 'DESC';
+    let userReactionsMap: Map<number, LikeStatus> = new Map();
 
-    const resultWoDuplicates = Array.from(
-      new Map(searchResult.map((post) => [post.id, post])).values(),
-    );
+    const [searchResult, totalCount] = await this.postsRepo.findAndCount({
+      relations: {
+        blog: true,
+        likes: {
+          author: true,
+        },
+      },
+      where: {
+        ...(blogId ? { blogId: Number(blogId) } : {}),
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
+      order: {
+        [query.sortBy]: sortDirection,
+        likes: {
+          createdAt: 'DESC',
+        },
+      },
+      skip: query.calculateSkip(),
+      take: query.pageSize,
+    });
 
-    const items = resultWoDuplicates.map(
-      (post: PostSQLDto) =>
+    console.log(searchResult);
+
+    const postsFormattedLikes = searchResult.map((post) => ({
+      ...post,
+      likes: post.likes
+        .filter(
+          (like) =>
+            like.deletionStatus === DeletionStatus.NotDeleted &&
+            like.status === LikeStatus.Like,
+        )
+        .slice(0, 3),
+    }));
+
+    if (userId) {
+      const userReactionsQB = await this.postsRepo.find({
+        relations: {
+          likes: true,
+        },
+        where: {
+          ...(blogId ? { blogId: Number(blogId) } : {}),
+          deletionStatus: DeletionStatus.NotDeleted,
+          likes: {
+            authorId: Number(userId),
+            deletionStatus: DeletionStatus.NotDeleted,
+          },
+        },
+      });
+
+      userReactionsMap = new Map(
+        userReactionsQB.map((post): [number, LikeStatus] => [
+          post.id,
+          post.likes[0].status,
+        ]),
+      );
+    }
+
+    const finalMap: PostSQLViewDto[] = postsFormattedLikes.map(
+      (post: Post) =>
         new PostSQLViewDto(
           post,
           userId
-            ? post.userReaction !== null
-              ? post.userReaction
-              : userReaction
-            : userReaction,
+            ? (userReactionsMap.get(Number(post.id)) ?? LikeStatus.None)
+            : LikeStatus.None,
+          post.likes.map((like: PostLike) => new NewestLikesViewDto(like)),
         ),
     );
-    const totalCount = await this.dataSource.query(
-      `SELECT COUNT(*)
-       FROM public."posts"
-       WHERE "deletionStatus" = 'not-deleted' AND ("blogId"= $1 OR $1 IS NULL)`,
-      [blogId || null],
-    );
+
     return PaginatedViewDto.mapToView({
-      items,
-      totalCount: Number(totalCount[0].count),
+      items: finalMap,
+      totalCount,
       page: query.pageNumber,
       size: query.pageSize,
     });

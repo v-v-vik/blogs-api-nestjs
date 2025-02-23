@@ -12,12 +12,11 @@ export class LikeService {
     currReaction: LikeStatus,
     newReaction: LikeStatus,
     entity: Comment | Post,
-    entityType: 'comment' | 'post',
   ): Promise<LikesInfo> {
-    const likeInfoProperty =
-      entityType === 'post' ? 'extendedLikesInfo' : 'likesInfo';
-    const likeInfo = entity[likeInfoProperty];
-    const { likesCount, dislikesCount } = likeInfo;
+    // const likeInfoProperty =
+    //   entityType === 'post' ? 'extendedLikesInfo' : 'likesInfo';
+    // const likeInfo = entity[likeInfoProperty];
+    const { likesCount, dislikesCount } = entity;
     const updatedReactionCount: LikesInfo = {
       likesCount,
       dislikesCount,
