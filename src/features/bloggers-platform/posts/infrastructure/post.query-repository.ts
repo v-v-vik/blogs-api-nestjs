@@ -80,11 +80,15 @@ export class PostsQueryRepository {
         })
         .getOne();
 
-      if (userReactionQB?.likes[0].status)
+      if (userReactionQB && userReactionQB?.likes.length > 0)
         userReaction = userReactionQB?.likes[0].status;
     }
 
-    return new PostSQLViewDto(post, userReaction, newestLikes);
+    return new PostSQLViewDto(
+      post,
+      userReaction ?? LikeStatus.None,
+      newestLikes,
+    );
   }
 
   async findAll(
@@ -96,28 +100,54 @@ export class PostsQueryRepository {
       query.sortDirection === SortDirection.Asc ? 'ASC' : 'DESC';
     let userReactionsMap: Map<number, LikeStatus> = new Map();
 
-    const [searchResult, totalCount] = await this.postsRepo.findAndCount({
-      relations: {
-        blog: true,
-        likes: {
-          author: true,
-        },
-      },
-      where: {
-        ...(blogId ? { blogId: Number(blogId) } : {}),
-        deletionStatus: DeletionStatus.NotDeleted,
-      },
-      order: {
-        [query.sortBy]: sortDirection,
-        likes: {
-          createdAt: 'DESC',
-        },
-      },
-      skip: query.calculateSkip(),
-      take: query.pageSize,
-    });
+    // const [searchResult, totalCount] = await this.postsRepo.findAndCount({
+    //   relations: {
+    //     blog: true,
+    //     likes: {
+    //       author: true,
+    //     },
+    //   },
+    //   where: {
+    //     ...(blogId ? { blogId: Number(blogId) } : {}),
+    //     deletionStatus: DeletionStatus.NotDeleted,
+    //   },
+    //   order: {
+    //     [query.sortBy]: sortDirection,
+    //     likes: {
+    //       createdAt: 'DESC',
+    //     },
+    //   },
+    //   //skip: query.calculateSkip(),
+    //   //take: query.pageSize,
+    // });
 
-    console.log(searchResult);
+    const queryBuilder = this.postsRepo
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.blog', 'blog')
+      .leftJoinAndSelect('post.likes', 'like')
+      .leftJoinAndSelect('like.author', 'author')
+      .where('post.deletionStatus = :status', {
+        status: DeletionStatus.NotDeleted,
+      });
+
+    if (blogId) {
+      queryBuilder.andWhere('post.blogId = :blogId', {
+        blogId: Number(blogId),
+      });
+    }
+
+    if (query.sortBy === 'blogName') {
+      queryBuilder.addOrderBy('blog.name', sortDirection);
+    } else {
+      queryBuilder.addOrderBy(`post.${query.sortBy}`, sortDirection);
+    }
+
+    queryBuilder
+      //.addOrderBy('like.createdAt', 'DESC')
+      .skip(query.calculateSkip())
+      .take(query.pageSize);
+
+    const [searchResult, totalCount] = await queryBuilder.getManyAndCount();
 
     const postsFormattedLikes = searchResult.map((post) => ({
       ...post,
@@ -126,6 +156,10 @@ export class PostsQueryRepository {
           (like) =>
             like.deletionStatus === DeletionStatus.NotDeleted &&
             like.status === LikeStatus.Like,
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
         .slice(0, 3),
     }));
@@ -148,7 +182,7 @@ export class PostsQueryRepository {
       userReactionsMap = new Map(
         userReactionsQB.map((post): [number, LikeStatus] => [
           post.id,
-          post.likes[0].status,
+          post.likes[0]?.status ?? LikeStatus.None,
         ]),
       );
     }

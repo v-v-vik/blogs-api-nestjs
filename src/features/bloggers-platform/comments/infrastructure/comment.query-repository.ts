@@ -5,7 +5,6 @@ import { GetCommentsQueryParams } from '../api/dto/get-comments-query-params.inp
 import { LikeStatus } from '../../likes/domain/like.entity';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 import { CommentViewDto } from '../api/dto/comment.view-dto';
-import { CommentSQLDto } from '../domain/dto/comment.sql-dto';
 import { PaginatedViewDto } from '../../../../core/dto/base.paginated.view-dto';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import { Comment } from '../domain/comment.entity';
@@ -45,7 +44,7 @@ export class CommentsQueryRepository {
     }
     return new CommentViewDto(
       res,
-      userId ? (res.likes[0].status ?? LikeStatus.None) : userReaction,
+      userId ? (res.likes[0]?.status ?? LikeStatus.None) : userReaction,
     );
   }
 
@@ -105,7 +104,7 @@ export class CommentsQueryRepository {
       (comment: Comment) =>
         new CommentViewDto(
           comment,
-          userId ? (comment.likes[0].status ?? LikeStatus.None) : userReaction,
+          userId ? (comment.likes[0]?.status ?? LikeStatus.None) : userReaction,
         ),
     );
     // const totalCount = await this.dataSource.query(
