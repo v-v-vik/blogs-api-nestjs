@@ -37,7 +37,6 @@ export class CommentsQueryRepository {
         status: DeletionStatus.NotDeleted,
       })
       .getOne();
-    console.log(res);
 
     if (!res) {
       throw NotFoundDomainException.create('Comment not found.');
