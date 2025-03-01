@@ -22,6 +22,9 @@ export abstract class BaseExceptionFilter implements ExceptionFilter {
     const response: Response = context.getResponse();
     const request: Request = context.getRequest();
 
+    console.error(`❌ ERROR on ${request.method} ${request.url}`);
+    console.error('Exception:', exception);
+
     this.onCatch(exception, response, request);
   }
 

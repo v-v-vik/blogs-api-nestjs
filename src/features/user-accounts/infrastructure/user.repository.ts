@@ -1,65 +1,69 @@
-import { User, UserDocument, UserModelType } from '../domain/user.entity';
-import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
-import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../domain/user.entity';
 import { NotFoundDomainException } from '../../../core/exceptions/domain-exceptions';
+import { DeletionStatus } from '../../../core/dto/deletion-status.enum';
 
 @Injectable()
 export class UsersRepository {
-  constructor(@InjectModel(User.name) private UserModel: UserModelType) {}
+  constructor(@InjectRepository(User) private usersRepo: Repository<User>) {}
 
-  async findByIdOrNotFoundException(id: string): Promise<UserDocument> {
-    const res = await this.UserModel.findOne({
-      _id: id,
-      deletionStatus: DeletionStatus.NotDeleted,
+  async findByIdOrNotFoundException(userId: string): Promise<User> {
+    const res = await this.usersRepo.findOne({
+      where: {
+        id: Number(userId),
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
     });
+
     if (!res) {
       throw NotFoundDomainException.create('User not found.');
     }
     return res;
   }
 
-  async save(user: UserDocument) {
-    await user.save();
-  }
-
-  async findByLoginAndEmail(
-    login: string,
-    email: string,
-  ): Promise<UserDocument | null> {
-    return this.UserModel.findOne({
-      $and: [
-        { deletionStatus: DeletionStatus.NotDeleted },
-        {
-          $or: [{ 'accountData.login': login }, { 'accountData.email': email }],
-        },
+  async findByLoginOrEmail(loginOrEmail: string) {
+    const res = await this.usersRepo.findOne({
+      where: [
+        { email: loginOrEmail, deletionStatus: DeletionStatus.NotDeleted },
+        { login: loginOrEmail, deletionStatus: DeletionStatus.NotDeleted },
       ],
     });
+    if (!res) {
+      return null;
+    }
+    return res;
   }
 
-  async findByLoginOrEmail(loginOrEmail: string): Promise<UserDocument | null> {
-    return this.UserModel.findOne({
-      $and: [
-        { deletionStatus: DeletionStatus.NotDeleted },
-        {
-          $or: [
-            { 'accountData.login': loginOrEmail },
-            { 'accountData.email': loginOrEmail },
-          ],
-        },
+  async findByCode(code: string): Promise<User | null> {
+    const res = await this.usersRepo.findOne({
+      where: {
+        confirmationCode: code,
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
+    });
+    if (!res) {
+      return null;
+    }
+    return res;
+  }
+
+  async save(user: User): Promise<string> {
+    const res = await this.usersRepo.save(user);
+    return res.id.toString();
+  }
+
+  async findByLoginAndEmail(login: string, email: string) {
+    const res = await this.usersRepo.findOne({
+      where: [
+        { email, deletionStatus: DeletionStatus.NotDeleted },
+        { login, deletionStatus: DeletionStatus.NotDeleted },
       ],
     });
-  }
-
-  async findByCode(code: string): Promise<UserDocument | null> {
-    return this.UserModel.findOne({
-      'emailConfirmation.confirmationCode': code,
-      deletionStatus: DeletionStatus.NotDeleted,
-    });
-  }
-
-  async getLoginByUserId(userId: string): Promise<string> {
-    const res = await this.findByIdOrNotFoundException(userId);
-    return res.accountData.login;
+    if (!res) {
+      return null;
+    }
+    return res;
   }
 }

@@ -9,10 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from '../application/users.service';
-import { UsersQueryRepository } from '../infrastructure/user.query-repository';
 import { AuthService } from '../application/auth.service';
-import { CreateUserInputDto } from './dto/user.input-dto';
 import { ExtractUserFromRequest } from '../guards/decorators/param/user-from-req.decorator';
 import { UserContextDto } from '../guards/dto/user-context.dto';
 import {
@@ -35,13 +32,15 @@ import { ExtractPayloadFromRequest } from '../guards/decorators/param/rt-payload
 import { RefreshTokenPayload } from '../dto/tokens/tokens-payload.dto';
 import { LogoutUserCommand } from '../application/useCases/logout-user.usecase';
 import { SkipThrottle } from '@nestjs/throttler';
+import { UsersQueryRepository } from '../infrastructure/user.query-repository';
+import { CreateUserInputDto } from './dto/user.input-dto';
+import { RegisterUserCommand } from '../application/useCases/register-user.usecase';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private userService: UsersService,
-    private usersQueryRepository: UsersQueryRepository,
+    private sqlUsersQueryRepository: UsersQueryRepository,
     private commandBus: CommandBus,
   ) {}
 
@@ -65,15 +64,14 @@ export class AuthController {
   @Post('registration')
   @HttpCode(HttpStatus.NO_CONTENT)
   async registerUser(@Body() dto: CreateUserInputDto) {
-    console.log(dto);
-    return this.userService.register(dto);
+    return this.commandBus.execute(new RegisterUserCommand(dto));
   }
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async about(@ExtractUserFromRequest() user: UserContextDto) {
-    return this.usersQueryRepository.aboutMeInfo(user.id);
+    return this.sqlUsersQueryRepository.aboutMeInfo(user.id);
   }
 
   @Post('registration-confirmation')
@@ -95,6 +93,7 @@ export class AuthController {
 
   @Post('new-password')
   async changePassword(@Body() dto: NewPasswordRecoveryInputDto) {
+    console.log('at controller:', dto);
     return this.authService.passwordUpdate(dto.newPassword, dto.recoveryCode);
   }
 

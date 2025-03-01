@@ -1,9 +1,12 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { SessionsRepository } from '../../infrastructure/session.repository';
-import { RefreshTokenPayload } from '../../../dto/tokens/tokens-payload.dto';
+import { UpdateResult } from 'typeorm';
 
 export class TerminateAllSessionsCommand {
-  constructor(public payload: RefreshTokenPayload) {}
+  constructor(
+    public deviceId: string,
+    public userId: string,
+  ) {}
 }
 
 @CommandHandler(TerminateAllSessionsCommand)
@@ -12,7 +15,10 @@ export class TerminateAllSessionsUseCase
 {
   constructor(private sessionsRepository: SessionsRepository) {}
 
-  async execute(command: TerminateAllSessionsCommand): Promise<boolean> {
-    return this.sessionsRepository.terminateAllSessions(command.payload);
+  async execute(command: TerminateAllSessionsCommand): Promise<UpdateResult> {
+    return this.sessionsRepository.terminateAllSessions(
+      command.deviceId,
+      command.userId,
+    );
   }
 }

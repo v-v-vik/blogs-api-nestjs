@@ -1,4 +1,4 @@
-import { SessionDocument } from '../../domain/session.entity';
+import { Session } from '../../domain/session.entity';
 
 export class SessionViewDto {
   ip: string;
@@ -6,11 +6,11 @@ export class SessionViewDto {
   lastActiveDate: string;
   deviceId: string;
 
-  constructor(session: SessionDocument) {
+  constructor(session: Session) {
     const dateCreated = new Date(
       Number(session.lastActiveDate) * 1000,
     ).toISOString();
-    this.ip = session.ip;
+    this.ip = session.ip.toString();
     this.title = session.title;
     this.lastActiveDate = dateCreated;
     this.deviceId = session.deviceId;

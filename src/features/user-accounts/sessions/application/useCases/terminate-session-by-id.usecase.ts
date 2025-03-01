@@ -20,7 +20,7 @@ export class TerminateSessionUseCase
       await this.sessionsRepository.findByDeviceIdOrNotFoundException(
         command.id,
       );
-    if (foundSession.userId !== command.userId) {
+    if (foundSession.userId.toString() !== command.userId) {
       throw ForbiddenDomainException.create(
         'You can terminate only your own session.',
         'userId',

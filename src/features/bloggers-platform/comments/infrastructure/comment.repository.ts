@@ -1,31 +1,31 @@
-import { InjectModel } from '@nestjs/mongoose';
-import {
-  Comment,
-  CommentDocument,
-  CommentModelType,
-} from '../domain/comment.entity';
 import { Injectable } from '@nestjs/common';
-import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Comment } from '../domain/comment.entity';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
-import { EntityRepository } from '../../../../core/interfaces/repository.interface';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
-Injectable();
-export class CommentsRepository implements EntityRepository<CommentDocument> {
+@Injectable()
+export class CommentsRepository {
   constructor(
-    @InjectModel(Comment.name) private CommentModel: CommentModelType,
+    @InjectRepository(Comment) private commentsRepo: Repository<Comment>,
   ) {}
-  async findByIdOrNotFoundException(id: string): Promise<CommentDocument> {
-    const res = await this.CommentModel.findOne({
-      _id: id,
-      deletionStatus: DeletionStatus.NotDeleted,
-    });
-    if (!res) {
-      throw NotFoundDomainException.create('Comment not found');
-    }
-    return res;
+
+  async save(comment: Comment) {
+    const res = await this.commentsRepo.save(comment);
+    return res.id.toString();
   }
 
-  async save(comment: CommentDocument) {
-    await comment.save();
+  async findByIdOrNotFoundException(id: string) {
+    const res = await this.commentsRepo.findOne({
+      where: {
+        id: Number(id),
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
+    });
+    if (!res) {
+      throw NotFoundDomainException.create('Comment not found.');
+    }
+    return res;
   }
 }

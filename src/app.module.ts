@@ -9,10 +9,11 @@ import { BloggersPlatformModule } from './features/bloggers-platform/bloggers-pl
 import { TestingModule } from './features/testing/testing.module';
 import { NotificationsModule } from './features/notifications/notifications.module';
 import { CqrsModule } from '@nestjs/cqrs';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
 import { CoreModule } from './core/core.module';
 import { CoreConfig } from './core/core.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -26,6 +27,16 @@ import { CoreConfig } from './core/core.config';
       },
       inject: [CoreConfig],
     }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'admin',
+      password: 'admin',
+      database: 'NestBlogsAPI',
+      autoLoadEntities: true,
+      synchronize: true,
+    }),
     CqrsModule.forRoot(),
     ThrottlerModule.forRoot([
       {
@@ -37,6 +48,7 @@ import { CoreConfig } from './core/core.config';
     BloggersPlatformModule,
     NotificationsModule,
     CoreModule,
+    TestingModule,
   ],
   controllers: [AppController],
   providers: [

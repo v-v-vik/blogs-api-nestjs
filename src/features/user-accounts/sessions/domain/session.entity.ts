@@ -1,43 +1,72 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
-import { HydratedDocument, Model } from 'mongoose';
 import { SessionDomainDto } from './dto/session.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Schema({ timestamps: true })
+@Entity('sessions')
 export class Session {
-  @Prop({ type: String, require: true })
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   ip: string;
-
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   title: string;
-
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   lastActiveDate: string;
-
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'uuid',
+    nullable: false,
+  })
   deviceId: string;
-
-  @Prop({ type: String, require: true })
-  userId: string;
-
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  userId: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   expDate: string;
-
-  @Prop({ type: String, default: DeletionStatus.NotDeleted })
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   deletionStatus: DeletionStatus;
 
-  static createInstance(dto: SessionDomainDto) {
+  static createNewInstance(dto: SessionDomainDto) {
     const session = new this();
     session.ip = dto.ip;
     session.title = dto.title;
     session.lastActiveDate = dto.lastActiveDate;
     session.deviceId = dto.deviceId;
-    session.userId = dto.userId;
+    session.userId = Number(dto.userId);
     session.expDate = dto.expDate;
-
-    return session as SessionDocument;
+    session.deletionStatus = DeletionStatus.NotDeleted;
+    return session as Session;
   }
+
+  // static createFromExistingDataInstance(dbSession: SessionSQLDto) {
+  //   const session = new this();
+  //   session.id = dbSession.id.toString();
+  //   session.ip = dbSession.ip;
+  //   session.title = dbSession.title;
+  //   session.lastActiveDate = dbSession.lastActiveDate;
+  //   session.deviceId = dbSession.deviceId;
+  //   session.userId = dbSession.userId;
+  //   session.expDate = dbSession.expDate;
+  //   session.deletionStatus = dbSession.deletionStatus;
+  //   return session as Session;
+  // }
 
   flagAsDeleted() {
     if (this.deletionStatus !== DeletionStatus.NotDeleted) {
@@ -50,11 +79,3 @@ export class Session {
     this.lastActiveDate = iat;
   }
 }
-
-export const sessionSchema = SchemaFactory.createForClass(Session);
-
-sessionSchema.loadClass(Session);
-
-export type SessionDocument = HydratedDocument<Session>;
-
-export type SessionModelType = Model<SessionDocument> & typeof Session;

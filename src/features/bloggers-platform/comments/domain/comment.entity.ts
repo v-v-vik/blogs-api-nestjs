@@ -1,55 +1,75 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {
-  LikesInfo,
-  LikesInfoSchema,
-} from '../../likes/domain/likes-info.schema';
-import {
-  CommentatorInfo,
-  CommentatorInfoSchema,
-} from './commentator-info.schema';
 import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
-import { HydratedDocument, Model } from 'mongoose';
 import {
   CreateCommentDomainDto,
   UpdateCommentDomainDto,
 } from './dto/comment.domain-dto';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { LikesInfo } from '../../likes/dto/like.main-dto';
+import { User } from '../../../user-accounts/domain/user.entity';
+import { Post } from '../../posts/domain/post.entity';
+import { CommentLike } from '../../likes/domain/like.entity';
 
-@Schema({ timestamps: true })
+@Entity('comments')
 export class Comment {
-  @Prop({ type: String, require: true })
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   content: string;
 
-  @Prop({ type: CommentatorInfoSchema, require: true })
-  commentatorInfo: CommentatorInfo;
+  @ManyToOne(() => User)
+  user: User;
 
-  @Prop({ type: String, require: true })
-  createdAt: string;
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  userId: number;
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: false,
+  })
+  createdAt: Date;
 
-  @Prop({ type: String, require: true })
-  postId: string;
+  @ManyToOne(() => Post)
+  post: Post;
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
+  postId: number;
 
-  @Prop({ type: LikesInfoSchema, require: true })
-  likesInfo: LikesInfo;
-
-  @Prop({ type: String, default: DeletionStatus.NotDeleted })
+  @Column({ type: 'int', default: 0 })
+  likesCount: number;
+  @Column({ type: 'int', default: 0 })
+  dislikesCount: number;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   deletionStatus: DeletionStatus;
 
-  static createInstance(dto: CreateCommentDomainDto): CommentDocument {
+  @OneToMany(() => CommentLike, (l) => l.comment)
+  likes: CommentLike[];
+
+  static createNewInstance(dto: CreateCommentDomainDto): Comment {
     const comment = new this();
     comment.content = dto.content;
-    comment.commentatorInfo = {
-      userId: dto.userId,
-      userLogin: dto.userLogin,
-    };
-    comment.createdAt = new Date().toISOString();
-    comment.postId = dto.postId;
-    comment.likesInfo = {
-      likesCount: 0,
-      dislikesCount: 0,
-    };
+    comment.userId = Number(dto.userId);
+    comment.postId = Number(dto.postId);
+    comment.createdAt = new Date();
+    comment.deletionStatus = DeletionStatus.NotDeleted;
 
-    return comment as CommentDocument;
+    return comment as Comment;
   }
 
   flagAsDeleted() {
@@ -64,17 +84,7 @@ export class Comment {
   }
 
   updateLikeCount(dto: LikesInfo) {
-    this.likesInfo = {
-      likesCount: dto.likesCount,
-      dislikesCount: dto.dislikesCount,
-    };
+    this.likesCount = dto.likesCount;
+    this.dislikesCount = dto.dislikesCount;
   }
 }
-
-export const CommentSchema = SchemaFactory.createForClass(Comment);
-
-CommentSchema.loadClass(Comment);
-
-export type CommentDocument = HydratedDocument<Comment>;
-
-export type CommentModelType = Model<Comment> & typeof Comment;

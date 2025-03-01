@@ -7,13 +7,9 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
 import { Response } from 'express';
-import { InjectModel } from '@nestjs/mongoose';
-import {
-  Session,
-  SessionModelType,
-} from '../../sessions/domain/session.entity';
 import { RefreshTokenPayload } from '../../dto/tokens/tokens-payload.dto';
 import { SessionsRepository } from '../../sessions/infrastructure/session.repository';
+import { Session } from '../../sessions/domain/session.entity';
 
 export class LoginUserCommand {
   constructor(
@@ -28,8 +24,6 @@ export class LoginUserCommand {
 export class LoginUserUseCase implements ICommandHandler<LoginUserCommand> {
   constructor(
     private sessionsRepository: SessionsRepository,
-    @InjectModel(Session.name)
-    private SessionModel: SessionModelType,
     @Inject(ACCESS_TOKEN_STRATEGY_INJECT_TOKEN)
     private accessTokenContext: JwtService,
     @Inject(REFRESH_TOKEN_STRATEGY_INJECT_TOKEN)
@@ -56,7 +50,7 @@ export class LoginUserUseCase implements ICommandHandler<LoginUserCommand> {
       userId: command.userId,
       expDate: tokenData.exp.toString(),
     };
-    const newSession = this.SessionModel.createInstance(domainDto);
+    const newSession = Session.createNewInstance(domainDto);
     await this.sessionsRepository.save(newSession);
     command.res.cookie('refreshToken', refreshToken, {
       httpOnly: true,

@@ -1,53 +1,52 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
+  Param,
   Post,
   Query,
-  Param,
-  Body,
-  Delete,
-  HttpStatus,
-  HttpCode,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../application/users.service';
-import { GetUsersQueryParams } from './dto/get-users-query-params.input-dto';
-import { PaginatedViewDto } from '../../../core/dto/base.paginated.view-dto';
-import { UsersQueryRepository } from '../infrastructure/user.query-repository';
-import { UserViewDto } from './dto/user.view-dto';
-import { ObjectIdValidationPipe } from '../../../core/pipes/objectId-validation-pipe';
-import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
 import { CreateUserInputDto } from './dto/user.input-dto';
 import { SkipThrottle } from '@nestjs/throttler';
+import { UsersQueryRepository } from '../infrastructure/user.query-repository';
+import { BasicAuthGuard } from '../guards/basic/basic-auth.guard';
+import { GetUsersQueryParams } from './dto/get-users-query-params.input-dto';
+import { CommandBus } from '@nestjs/cqrs';
+import { CreateUserAdminCommand } from '../application/useCases/admin/create-user-admin.usecase';
+import { ParamsIdValidationPipe } from '../../../core/pipes/id-param-validation.pipe';
 
 @UseGuards(BasicAuthGuard)
 @SkipThrottle()
-@Controller('users')
+@Controller('sa/users')
 export class UsersController {
   constructor(
-    private usersQueryRepository: UsersQueryRepository,
     private usersService: UsersService,
+    private sqlUsersQueryRepository: UsersQueryRepository,
+    private commandBus: CommandBus,
   ) {}
   @Get(':id')
-  async getById(
-    @Param('id', ObjectIdValidationPipe) id: string,
-  ): Promise<UserViewDto> {
-    return this.usersQueryRepository.getByIdOrNotFoundFail(id);
+  async getById(@Param('id', ParamsIdValidationPipe) id: string) {
+    return this.sqlUsersQueryRepository.findByIdOrNotFoundFail(id);
   }
   @Get()
-  async getAll(
-    @Query() query: GetUsersQueryParams,
-  ): Promise<PaginatedViewDto<UserViewDto[]>> {
-    return this.usersQueryRepository.getAll(query);
+  async getAll(@Query() query: GetUsersQueryParams) {
+    return this.sqlUsersQueryRepository.findAll(query);
   }
   @Post()
-  async create(@Body() body: CreateUserInputDto): Promise<UserViewDto> {
-    const userId = await this.usersService.create(body);
-    return this.usersQueryRepository.getByIdOrNotFoundFail(userId);
+  async create(@Body() body: CreateUserInputDto) {
+    const userId = await this.commandBus.execute(
+      new CreateUserAdminCommand(body),
+    );
+    return this.sqlUsersQueryRepository.findByIdOrNotFoundFail(userId);
   }
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ObjectIdValidationPipe) id: string): Promise<void> {
+  async delete(@Param('id', ParamsIdValidationPipe) id: string): Promise<void> {
     return await this.usersService.delete(id);
   }
 }

@@ -1,56 +1,80 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {
-  LikesInfo,
-  LikesInfoSchema,
-} from '../../likes/domain/likes-info.schema';
-import { HydratedDocument, Model } from 'mongoose';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import {
   CreatePostDomainDto,
   UpdatePostDomainDto,
 } from './dto/post.domain-dto';
-import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Blog } from '../../blogs/domain/blog.entity';
+import { LikesInfo } from '../../likes/dto/like.main-dto';
+import { PostLike } from '../../likes/domain/like.entity';
 
-@Schema({ timestamps: true })
+@Entity('posts')
 export class Post {
-  @Prop({ type: String, require: true })
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   title: string;
 
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   shortDescription: string;
 
-  @Prop({ type: String, require: true })
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   content: string;
 
-  @Prop({ type: String, require: true })
-  blogId: string;
+  @ManyToOne(() => Blog, { nullable: false, onDelete: 'CASCADE' })
+  blog: Blog;
 
-  @Prop({ type: String, require: true })
-  blogName: string;
+  @Column({ type: 'int' })
+  blogId: number;
 
-  @Prop({ type: String, require: true })
-  createdAt: string;
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: false,
+  })
+  createdAt: Date;
 
-  @Prop({ type: LikesInfoSchema, require: true })
-  extendedLikesInfo: LikesInfo;
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  deletionStatus: string;
 
-  @Prop({ type: String, default: DeletionStatus.NotDeleted })
-  deletionStatus: DeletionStatus;
+  @Column({ type: 'int', default: 0 })
+  likesCount: number;
 
-  static createInstance(dto: CreatePostDomainDto): PostDocument {
+  @Column({ type: 'int', default: 0 })
+  dislikesCount: number;
+
+  @OneToMany(() => PostLike, (l) => l.post)
+  likes: PostLike[];
+
+  static createNewInstance(dto: CreatePostDomainDto): Post {
     const post = new this();
     post.title = dto.title;
     post.shortDescription = dto.shortDescription;
     post.content = dto.content;
-    post.blogId = dto.blogId;
-    post.blogName = dto.blogName;
-    post.createdAt = new Date().toISOString();
-    post.extendedLikesInfo = {
-      likesCount: 0,
-      dislikesCount: 0,
-    };
+    post.blogId = Number(dto.blogId);
+    post.createdAt = new Date();
+    post.deletionStatus = DeletionStatus.NotDeleted;
 
-    return post as PostDocument;
+    return post as Post;
   }
 
   flagAsDeleted() {
@@ -64,22 +88,11 @@ export class Post {
     this.title = dto.title;
     this.shortDescription = dto.shortDescription;
     this.content = dto.content;
-    this.blogId = dto.blogId;
-    this.blogName = dto.blogName;
+    this.blogId = Number(dto.blogId);
   }
 
   updateLikeCount(dto: LikesInfo) {
-    this.extendedLikesInfo = {
-      likesCount: dto.likesCount,
-      dislikesCount: dto.dislikesCount,
-    };
+    this.likesCount = dto.likesCount;
+    this.dislikesCount = dto.dislikesCount;
   }
 }
-
-export const PostSchema = SchemaFactory.createForClass(Post);
-
-PostSchema.loadClass(Post);
-
-export type PostDocument = HydratedDocument<Post>;
-
-export type PostModelType = Model<PostDocument> & typeof Post;

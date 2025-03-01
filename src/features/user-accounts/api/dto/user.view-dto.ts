@@ -1,4 +1,4 @@
-import { UserDocument } from '../../domain/user.entity';
+import { User } from '../../domain/user.entity';
 
 export class UserViewDto {
   id: string;
@@ -6,11 +6,11 @@ export class UserViewDto {
   email: string;
   createdAt: string;
 
-  constructor(user: UserDocument) {
-    this.id = user._id.toString();
-    this.login = user.accountData.login;
-    this.email = user.accountData.email;
-    this.createdAt = user.accountData.createdAt;
+  constructor(user: User) {
+    this.id = user.id.toString();
+    this.login = user.login;
+    this.email = user.email;
+    this.createdAt = user.createdAt.toISOString();
   }
 
   // static mapToView(user: UserDocument): UserViewModel {

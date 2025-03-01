@@ -1,6 +1,6 @@
-import { CommentsRepository } from '../../infrastructure/comment.repository';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ForbiddenDomainException } from '../../../../../core/exceptions/domain-exceptions';
+import { CommentsRepository } from '../../infrastructure/comment.repository';
 
 export class DeleteCommentCommand {
   constructor(
@@ -18,7 +18,7 @@ export class DeleteCommentUseCase
   async execute(command: DeleteCommentCommand): Promise<void> {
     const foundComment =
       await this.commentsRepository.findByIdOrNotFoundException(command.id);
-    if (foundComment.commentatorInfo.userId !== command.userId) {
+    if (foundComment.userId !== +command.userId) {
       throw ForbiddenDomainException.create(
         'You can delete only your own comments.',
         'userId',

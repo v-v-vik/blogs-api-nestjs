@@ -43,7 +43,7 @@ export function pipesSetup(app: INestApplication) {
       //to format error according to swagger docs
       exceptionFactory: (errors) => {
         const formattedErrors: any = errorFormatter(errors);
-
+        //console.error('⚠️ Validation failed:', errors);
         throw BadRequestDomainException.createWithArray(formattedErrors);
       },
     }),

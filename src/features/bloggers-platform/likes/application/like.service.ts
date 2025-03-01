@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { LikesInfo } from '../domain/likes-info.schema';
 import { LikeStatus } from '../domain/like.entity';
-import { CommentDocument } from '../../comments/domain/comment.entity';
-import { PostDocument } from '../../posts/domain/post.entity';
+import { Post } from '../../posts/domain/post.entity';
+import { Comment } from '../../comments/domain/comment.entity';
+import { LikesInfo } from '../dto/like.main-dto';
 
 Injectable();
 export class LikeService {
@@ -11,13 +11,12 @@ export class LikeService {
   async changeLikeCount(
     currReaction: LikeStatus,
     newReaction: LikeStatus,
-    entity: CommentDocument | PostDocument,
-    entityType: 'comment' | 'post',
+    entity: Comment | Post,
   ): Promise<LikesInfo> {
-    const likeInfoProperty =
-      entityType === 'post' ? 'extendedLikesInfo' : 'likesInfo';
-    const likeInfo = entity[likeInfoProperty];
-    const { likesCount, dislikesCount } = likeInfo;
+    // const likeInfoProperty =
+    //   entityType === 'post' ? 'extendedLikesInfo' : 'likesInfo';
+    // const likeInfo = entity[likeInfoProperty];
+    const { likesCount, dislikesCount } = entity;
     const updatedReactionCount: LikesInfo = {
       likesCount,
       dislikesCount,

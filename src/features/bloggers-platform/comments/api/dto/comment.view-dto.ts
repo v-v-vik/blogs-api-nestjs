@@ -1,14 +1,14 @@
 import { LikeStatus } from '../../../likes/domain/like.entity';
-import { CommentDocument } from '../../domain/comment.entity';
+import { Comment } from '../../domain/comment.entity';
 
 class LikesInfoView {
   likesCount: number;
   dislikesCount: number;
   myStatus: string;
 
-  constructor(comment: CommentDocument, userReaction: LikeStatus) {
-    this.likesCount = comment.likesInfo.likesCount;
-    this.dislikesCount = comment.likesInfo.dislikesCount;
+  constructor(comment: Comment, userReaction: LikeStatus) {
+    this.likesCount = comment.likesCount;
+    this.dislikesCount = comment.dislikesCount;
     this.myStatus = userReaction;
   }
 }
@@ -23,14 +23,14 @@ export class CommentViewDto {
   createdAt: string;
   likesInfo: LikesInfoView;
 
-  constructor(comment: CommentDocument, userReaction: LikeStatus) {
-    this.id = comment._id.toString();
+  constructor(comment: Comment, userReaction: LikeStatus) {
+    this.id = comment.id.toString();
     this.content = comment.content;
     this.commentatorInfo = {
-      userId: comment.commentatorInfo.userId,
-      userLogin: comment.commentatorInfo.userLogin,
+      userId: comment.userId.toString(),
+      userLogin: comment.user.login,
     };
-    this.createdAt = comment.createdAt;
+    this.createdAt = comment.createdAt.toISOString();
     this.likesInfo = new LikesInfoView(comment, userReaction);
   }
 }

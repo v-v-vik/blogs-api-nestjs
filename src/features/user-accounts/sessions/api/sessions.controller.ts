@@ -12,9 +12,10 @@ import { ExtractPayloadFromRequest } from '../../guards/decorators/param/rt-payl
 import { RefreshTokenPayload } from '../../dto/tokens/tokens-payload.dto';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CommandBus } from '@nestjs/cqrs';
-import { SessionsQueryRepository } from '../infrastructure/session.query-repository';
 import { TerminateSessionCommand } from '../application/useCases/terminate-session-by-id.usecase';
 import { TerminateAllSessionsCommand } from '../application/useCases/terminate-all-sessions.usecase';
+import { SessionsQueryRepository } from '../infrastructure/session.query-repository';
+import { UUIDValidationPipe } from '../../../../core/pipes/UUID-validation.pipe';
 
 @SkipThrottle()
 @Controller('security/devices')
@@ -39,7 +40,9 @@ export class SessionsController {
   async terminateAllSessions(
     @ExtractPayloadFromRequest() payload: RefreshTokenPayload,
   ) {
-    return this.commandBus.execute(new TerminateAllSessionsCommand(payload));
+    return this.commandBus.execute(
+      new TerminateAllSessionsCommand(payload.deviceId, payload.id),
+    );
   }
 
   @Delete(':id')
@@ -47,7 +50,7 @@ export class SessionsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async terminateSessionById(
     @ExtractPayloadFromRequest() payload: RefreshTokenPayload,
-    @Param('id') id: string,
+    @Param('id', UUIDValidationPipe) id: string,
   ) {
     return this.commandBus.execute(new TerminateSessionCommand(id, payload.id));
   }

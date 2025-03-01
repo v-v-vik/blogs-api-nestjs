@@ -1,67 +1,58 @@
-import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
-import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
-import {
-  Session,
-  SessionDocument,
-  SessionModelType,
-} from '../domain/session.entity';
+import { Session } from '../domain/session.entity';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Not, Repository, UpdateResult } from 'typeorm';
 import { NotFoundDomainException } from '../../../../core/exceptions/domain-exceptions';
 import { RefreshTokenPayload } from '../../dto/tokens/tokens-payload.dto';
+import { DeletionStatus } from '../../../../core/dto/deletion-status.enum';
 
 @Injectable()
 export class SessionsRepository {
   constructor(
-    @InjectModel(Session.name) private SessionModel: SessionModelType,
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Session) private sessionsRepo: Repository<Session>,
   ) {}
 
-  // async findByIdOrNotFoundException(id: string): Promise<SessionDocument> {
-  //   const res = await this.SessionModel.findOne({
-  //     _id: id,
-  //     deletionStatus: DeletionStatus.NotDeleted,
-  //   });
-  //   if (!res) {
-  //     throw NotFoundDomainException.create('Session not found.');
-  //   }
-  //   return res;
-  // }
-
-  async save(session: SessionDocument) {
-    await session.save();
-  }
-
-  async tokenListed(
-    tokenData: RefreshTokenPayload,
-  ): Promise<string | undefined> {
-    const res = await this.SessionModel.findOne({
-      lastActiveDate: tokenData.iat.toString(),
-      deviceId: tokenData.deviceId,
-      userId: tokenData.id,
-      deletionStatus: DeletionStatus.NotDeleted,
+  async findByDeviceIdOrNotFoundException(deviceId: string): Promise<Session> {
+    const res = await this.sessionsRepo.findOne({
+      where: {
+        deviceId,
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
     });
-    return res?._id.toString();
-  }
-
-  async terminateAllSessions(tokenData: RefreshTokenPayload): Promise<boolean> {
-    const res = await this.SessionModel.deleteMany({
-      $and: [
-        { deviceId: { $ne: tokenData.deviceId } },
-        { iat: { $ne: tokenData.iat } },
-        { deletionStatus: DeletionStatus.NotDeleted },
-      ],
-    });
-    return !!res;
-  }
-
-  async findByDeviceIdOrNotFoundException(
-    deviceId: string,
-  ): Promise<SessionDocument> {
-    const res = await this.SessionModel.findOne({ deviceId });
     if (!res) {
-      throw NotFoundDomainException.create(
-        `Session with Device Id: ${deviceId} not found.`,
-      );
+      throw NotFoundDomainException.create('Session not found.');
     }
     return res;
+  }
+
+  async terminateAllSessions(
+    deviceId: string,
+    userId: string,
+  ): Promise<UpdateResult> {
+    return await this.sessionsRepo.update(
+      { deviceId: Not(deviceId), userId: Number(userId) },
+      { deletionStatus: DeletionStatus.PermanentDeleted },
+    );
+  }
+
+  async tokenListed(tokenData: RefreshTokenPayload) {
+    const res = await this.sessionsRepo.findOne({
+      where: {
+        deviceId: tokenData.deviceId,
+        userId: Number(tokenData.id),
+        lastActiveDate: tokenData.iat.toString(),
+        deletionStatus: DeletionStatus.NotDeleted,
+      },
+    });
+    if (!res) {
+      return null;
+    }
+    return res.id;
+  }
+
+  async save(session: Session) {
+    const res = await this.sessionsRepo.save(session);
+    return res.id.toString();
   }
 }
